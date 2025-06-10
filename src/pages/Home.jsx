@@ -1,122 +1,177 @@
-import { useState, useEffect } from 'react'
-import '../index.css'
-import IconeFreteExpress from '../assets/images/icone-frete-express.png'
-import { sayHello } from '../../services/api'
-import BotaoEnviar from '../components/botao'
+import { Link, useNavigate } from "react-router-dom";
+import "../index.css";
+import Logo from "../assets/images/icone-frete-express.png";
+import { useAuth } from "../contexts/AuthContext";
 
 function Home() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
-        const msg = await sayHello()
-        console.log(msg)
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (isAuthenticated && user) {
+      switch (user.role) {
+        case "ADMIN":
+          navigate("/admin/");
+          break;
+        case "CLIENT":
+          navigate("/client/profile");
+          break;
+        case "DRIVER":
+          navigate("/driver/profile");
+          break;
+        default:
+          navigate("/");
+      }
+    } else {
+      navigate("/login");
     }
-    
-    const pegarMsg = async (e) => {
-      e.preventDefault()
-        const msg = await sayHello()
-        console.log(msg)
-    }
-
+  };
 
   return (
-    <>
-<div className="flex h-screen w-full bg-gradient-to-br from-red-500 to-blue-900 font-sans">
-      {/* Lado esquerdo - Logo */}
-      <div className="w-1/2 flex flex-col items-center justify-center p-12 relative bg-gray-100">
-  <div className="w-full h-[60%] bg-blue-500 flex flex-col items-center justify-center p-6 rounded-xl shadow-lg">
-
-    <div className="mb-6 bg-none rounded-xl p-4">
-      <img 
-        src={IconeFreteExpress} 
-        alt="Fretes Express Logo" 
-        className="w-full h-auto max-h-48 object-contain drop-shadow-lg"
-      />
-    </div>
-    <div className="text-5xl font-bold tracking-tight text-center mb-4">
-      <span className="text-gray-800 font-bold">FRETES</span>
-      <span className="bg-blue-800 text-white px-4 py-1 ml-2 shadow-md rounded-md">EXPRESS</span>
-    </div>
-
-    <div className="w-full flex justify-center items-center">
-      <p className="bg-blue-600 rounded-full text-yellow-400 mt-6  text-xl font-light italic py-2 px-6">Slogan foda 😎</p>
-    </div>
-  </div>
-</div>
-
-
-      {/* Divisor estilizado */}
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 w-1">
-          <div className="h-full bg-gradient-to-b from-yellow-400 via-yellow-500 to-yellow-400 shadow-lg"></div>
+    <div className="min-h-screen bg-gray-900">
+      <header className="py-4 px-6 border-b border-gray-800">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <div className="flex items-center">
+            <img src={Logo} alt="Fretes Express" className="h-10 mr-3" />
+            <span className="text-xl font-medium text-white">
+              Fretes<span className="!text-blue-400">Express</span>
+            </span>
+          </div>
+          <nav>
+            <ul className="flex items-center space-x-8">
+              <li>
+                <a
+                  href="#como-funciona"
+                  className="text-gray-400 hover:text-blue-400 transition-colors"
+                >
+                  Como funciona
+                </a>
+              </li>
+              <li>
+                <button
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-md transition-colors"
+                  onClick={handleLogin}
+                >
+                  Entrar
+                </button>
+              </li>
+            </ul>
+          </nav>
         </div>
-        <div className="absolute top-1/2 left-0 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-yellow-500 flex items-center justify-center shadow-lg z-10">
-          <div className="w-8 h-8 rounded-full bg-blue-900 flex items-center justify-center">
-            <div className="w-6 h-6 rounded-full bg-yellow-500"></div>
+      </header>
+
+      <main>
+        <section className="py-20 px-6">
+          <div className="max-w-5xl mx-auto">
+            <div className="flex flex-col md:flex-row items-center">
+              <div className="md:w-1/2 mb-12 md:mb-0">
+                <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
+                  Transporte de cargas{" "}
+                  <span className="!text-blue-400">simplificado</span>
+                </h1>
+                <p className="text-gray-400 text-lg mb-8 max-w-md">
+                  Somos especialistas em simplificar e otimizar a logística para
+                  empresas e autônomos em todo o país!
+                </p>
+                <Link
+                  to="/login"
+                  className="inline-block bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-md transition-colors"
+                >
+                  Começar agora
+                </Link>
+              </div>
+              <div className="md:w-1/2 flex justify-center">
+                <div className="rounded-lg bg-gray-800 p-6">
+                  <img
+                    src={Logo}
+                    alt="Ilustração"
+                    className="w-full max-w-sm mx-auto"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="como-funciona" className="py-10 px-6 bg-gray-800">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="text-3xl font-bold text-center text-white mb-16">
+              Como funciona
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-700 text-blue-400 mb-5">
+                  <span className="text-2xl font-semibold">1</span>
+                </div>
+                <h3 className="text-xl font-medium text-white mb-2">
+                  Cadastre-se
+                </h3>
+                <p className="text-gray-400">
+                  Crie sua conta como cliente ou motorista
+                </p>
+              </div>
+
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-700 text-blue-400 mb-5">
+                  <span className="text-2xl font-semibold">2</span>
+                </div>
+                <h3 className="text-xl font-medium text-white mb-2">
+                  Conecte-se
+                </h3>
+                <p className="text-gray-400">
+                  Encontre parceiros ideais para suas cargas
+                </p>
+              </div>
+
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-700 text-blue-400 mb-5">
+                  <span className="text-2xl font-semibold">3</span>
+                </div>
+                <h3 className="text-xl font-medium text-white mb-2">
+                  Transporte
+                </h3>
+                <p className="text-gray-400">
+                  Acompanhe entregas com facilidade
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="py-8 px-6 border-t border-gray-800">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center">
+          <div className="mb-4 md:mb-0 flex items-center gap-2">
+            <img src={Logo} alt="Fretes Express" className="h-8 mb-2" />
+            <p className="text-gray-500 text-sm">
+              &copy; {new Date().getFullYear()} Fretes Express
+            </p>
+          </div>
+          <div className="flex space-x-8">
+            <a
+              href="#"
+              className="text-gray-500 hover:text-blue-400 transition-colors"
+            >
+              Termos
+            </a>
+            <a
+              href="#"
+              className="text-gray-500 hover:text-blue-400 transition-colors"
+            >
+              Privacidade
+            </a>
+            <a
+              href="#"
+              className="text-gray-500 hover:text-blue-400 transition-colors"
+            >
+              Contato
+            </a>
           </div>
         </div>
-        <div className="absolute top-1/4 left-0 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-yellow-500 shadow-lg"></div>
-        <div className="absolute top-3/4 left-0 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-yellow-500 shadow-lg"></div>
-      </div>
-
-      {/* Lado direito - Formulário de login */}
-      <div className="w-1/2 flex items-center justify-center">
-        <div className="w-2/3">
-          <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">Seja Bem-vindo(a)</h1>
-          <p className="text-yellow-100 mb-10 font-light">Insira seu CPF e senha cadastrado</p>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="text-yellow-100 text-sm font-medium mb-1 block">Email</label>
-              <input
-                id="email"
-                type="text"
-                placeholder="Digite seu email"
-                className="w-full p-4 rounded-lg bg-blue-800 border border-blue-700 text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="senha" className="text-yellow-100 text-sm font-medium mb-1 block">Senha</label>
-              <input
-                id="senha"
-                type="password"
-                placeholder="Digite sua senha"
-                className="w-full p-4 rounded-lg bg-blue-800 border border-blue-700 text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            
-            <button
-              type="submit"
-              className="w-full p-4 bg-yellow-500 text-blue-900 font-semibold rounded-lg hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:ring-offset-2 focus:ring-offset-blue-800 transition-all shadow-md text-lg cursor-pointer"
-            >
-              Entrar
-            </button>
-
-            <BotaoEnviar onClick={pegarMsg} type={"input"}/>
-            <button
-              type="button"
-              className="w-full p-4 bg-transparent text-white border border-white font-medium rounded-lg hover:bg-blue-800 transition-all text-lg cursor-pointer"
-            >
-              Criar Conta
-            </button>
-
-            <div className="text-center mt-6">
-              <a href="#" className="text-yellow-300 text-sm hover:text-yellow-200 transition-colors underline">
-                Esqueceu sua senha?
-              </a>
-            </div>
-          </form>
-        </div>
-      </div>
+      </footer>
     </div>
-    </>
-  )
+  );
 }
 
-export default Home
+export default Home;

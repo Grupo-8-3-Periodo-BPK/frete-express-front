@@ -1,2 +1,119 @@
 @import "tailwindcss";
 @tailwind utilities;
+
+/* Estilos globais para o tema */
+html, body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: "Poppins", sans-serif !important;
+}
+
+/* Tema claro (padrão) */
+html, body {
+  background-color: white;
+  color: #1f2937;
+}
+
+/* Tema escuro */
+html.dark, body.dark-mode, [data-theme="dark"] {
+  background-color: #1f2937 !important;
+  color: white !important;
+}
+
+/* Transição para todos os inputs */
+input, textarea, select {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Estilo para o focus ring baseado no tema */
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); /* azul para tema claro */
+}
+
+/* Focus ring para o tema escuro */
+html.dark input:focus,
+html.dark textarea:focus,
+html.dark select:focus,
+body.dark-mode input:focus,
+body.dark-mode textarea:focus,
+body.dark-mode select:focus {
+  box-shadow: 0 0 0 2px rgba(107, 114, 128, 0.5) !important; /* cinza para tema escuro */
+}
+
+/* Forçar estilos no modo escuro para elementos específicos */
+html.dark input,
+html.dark textarea,
+html.dark select,
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select {
+  background-color: #374151 !important; /* dark:bg-gray-700 */
+  color: white !important;
+  border-color: #4B5563 !important; /* dark:border-gray-600 */
+}
+
+html.dark label,
+html.dark h1,
+html.dark h2, 
+html.dark h3,
+html.dark h4,
+html.dark p,
+html.dark span,
+body.dark-mode label,
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode p,
+body.dark-mode span {
+  color: white !important;
+}
+
+html.dark .dark\:bg-gray-800 {
+  background-color: #1f2937 !important;
+}
+
+html.dark .dark\:bg-gray-900 {
+  background-color: #111827 !important;
+}
+
+/* Estilos específicos para página de criar frete */
+body.dark-mode #create-freight-page,
+html.dark #create-freight-page {
+  background-color: #111827 !important;
+}
+
+body.dark-mode #freight-form-container,
+html.dark #freight-form-container {
+  background-color: #1f2937 !important;
+}
+
+body.dark-mode #freight-form,
+html.dark #freight-form {
+  background-color: #1f2937 !important;
+}
+
+body.dark-mode #freight-form *,
+html.dark #freight-form * {
+  color: white !important;
+}
+
+body.dark-mode #freight-form input,
+body.dark-mode #freight-form textarea,
+body.dark-mode #freight-form select,
+html.dark #freight-form input,
+html.dark #freight-form textarea,
+html.dark #freight-form select {
+  background-color: #374151 !important;
+  border-color: #4B5563 !important;
+  --ring-color: #4B5563 !important;
+  &:focus {
+    --tw-ring-color: var(--color-gray-500) /* oklch(0.623 0.214 259.815) */;
+}
+}
+
+/* Remover qualquer gradiente ou blur que possa estar interferindo */
+body.dark-mode *[class*="bg-gradient"],
+html.dark *[class*="bg-gradient"] {
+  background-image: none !important;
+}
