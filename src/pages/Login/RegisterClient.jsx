@@ -3,10 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../contexts/AuthContext";
 import { BackButton } from "../../components/ui/button/Back";
 import { motion } from "framer-motion";
+import { registerClient } from "../../services/user";
+import Alert from "../../components/ui/modal/Alert";
+import Loading from "../../components/ui/modal/Loading";
 
 function RegisterClient() {
   const { darkMode } = useTheme();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [navigateTo, setNavigateTo] = useState(null);
+  const [alert, setAlert] = useState({
+    type: "success",
+    message: "",
+  });
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -22,8 +32,28 @@ function RegisterClient() {
     }));
   };
 
+  const showAlert = (message, type) => {
+    setAlert({ message, type });
+    setIsAlertOpen(true);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await registerClient(formData);
+      if (response.status === 201) {
+        showAlert("Cliente cadastrado com sucesso", "success");
+        navigate("/login");
+      } else {
+        showAlert(response.data.error || "Erro ao cadastrar cliente", "error");
+        setLoading(false);
+      }
+    } catch (error) {
+      showAlert("Erro ao cadastrar cliente", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputStyle = `w-full px-4 py-2 rounded-lg border ${
@@ -119,7 +149,8 @@ function RegisterClient() {
               type="submit"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`w-full py-3 px-4 rounded-lg font-medium text-white
+              onClick={handleSubmit}
+              className={`w-full py-3 px-4 rounded-lg font-medium text-white cursor-pointer
                 ${
                   darkMode
                     ? "bg-blue-600 hover:bg-blue-700"
@@ -136,6 +167,16 @@ function RegisterClient() {
             </motion.button>
           </div>
         </motion.form>
+
+        <Loading isOpen={loading} />
+
+        <Alert
+          message={alert.message}
+          isAlertOpen={isAlertOpen}
+          setIsAlertOpen={setIsAlertOpen}
+          type={alert.type}
+          navigateTo={navigateTo}
+        />
       </div>
     </div>
   );

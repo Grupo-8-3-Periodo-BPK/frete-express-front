@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { useTheme, useAuth } from "../../../contexts/AuthContext"; // Seus imports existentes
+import { useTheme, useAuth } from "../../../contexts/AuthContext";
 import { motion } from "framer-motion";
 import Alert from "../../../components/ui/modal/Alert";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
-  createFreight,
+  updateFreight,
+  getFreightById,
   getIBGECities,
   getIBGECitiesByState,
 } from "../../../services/freight";
+import Loading from "../../../components/ui/modal/Loading";
 
-// --- COMPONENTE PRINCIPAL ---
-function CreateFreight() {
+function EditFreight() {
   const { darkMode } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { id } = useParams();
+
   const [alert, setAlert] = useState({
     message: "",
     type: "success",
@@ -34,43 +37,108 @@ function CreateFreight() {
     initial_date: "",
     final_date: "",
   });
+
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
 
   const [states, setStates] = useState([]);
   const [originCities, setOriginCities] = useState([]);
   const [destinationCities, setDestinationCities] = useState([]);
 
+  // Carrega dados iniciais
   useEffect(() => {
-    getIBGECities()
-      .then((data) => setStates(data))
-      .catch((error) => console.error("Erro ao buscar estados:", error));
-  }, []);
+    const loadInitialData = async () => {
+      try {
+        // Carrega estados
+        const statesData = await getIBGECities();
+        setStates(statesData);
 
+        // Carrega dados do frete
+        if (id) {
+          const response = await getFreightById(id);
+          if (response.status === 200) {
+            const freightData = response.data;
+
+            // Formata os dados para o formulário
+            setFreight({
+              name: freightData.name || "",
+              price: formatCurrencyFromNumber(freightData.price),
+              weight: freightData.weight?.toString() || "",
+              height: freightData.height?.toString() || "",
+              width: freightData.width?.toString() || "",
+              length: freightData.length?.toString() || "",
+              origin_city: freightData.origin_city || "",
+              origin_state: freightData.origin_state || "",
+              destination_city: freightData.destination_city || "",
+              destination_state: freightData.destination_state || "",
+              initial_date: formatDateFromAPI(freightData.initial_date),
+              final_date: formatDateFromAPI(freightData.final_date),
+            });
+          } else {
+            setAlert({
+              message: "Erro ao carregar dados do frete",
+              type: "error",
+              isAlertOpen: true,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        setAlert({
+          message: "Erro ao carregar dados",
+          type: "error",
+          isAlertOpen: true,
+        });
+      } finally {
+        setPageLoading(false);
+      }
+    };
+
+    loadInitialData();
+  }, [id]);
+
+  // Carrega cidades da origem quando estado muda
   useEffect(() => {
     if (freight.origin_state) {
-      setOriginCities([]);
       getIBGECitiesByState(freight.origin_state)
         .then((data) => setOriginCities(data))
         .catch((error) => console.error("Erro ao buscar cidades:", error));
     }
   }, [freight.origin_state]);
 
+  // Carrega cidades do destino quando estado muda
   useEffect(() => {
     if (freight.destination_state) {
-      setDestinationCities([]);
       getIBGECitiesByState(freight.destination_state)
         .then((data) => setDestinationCities(data))
         .catch((error) => console.error("Erro ao buscar cidades:", error));
     }
   }, [freight.destination_state]);
 
+  // Funções auxiliares
+  const formatCurrencyFromNumber = (value) => {
+    if (!value) return "";
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value);
+  };
+
+  const formatDateFromAPI = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("pt-BR");
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "origin_state")
+    if (name === "origin_state") {
       setFreight((prev) => ({ ...prev, origin_city: "" }));
-    if (name === "destination_state")
+    }
+    if (name === "destination_state") {
       setFreight((prev) => ({ ...prev, destination_city: "" }));
+    }
 
     setFreight((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
@@ -114,43 +182,37 @@ function CreateFreight() {
     }
 
     setLoading(true);
-    if (!user.id) {
-      setAlert({
-        message: "Usuário não autenticado.",
-        type: "error",
-        isAlertOpen: true,
-      });
-      setLoading(false);
-      return;
-    }
+
     const freightData = {
       ...freight,
-      user_id: Number(user.id),
       price: parseFloat(freight.price.replace(/[^\d,]/g, "").replace(",", ".")),
+      weight: parseFloat(freight.weight),
+      height: parseFloat(freight.height),
+      width: parseFloat(freight.width),
+      length: parseFloat(freight.length),
       initial_date: freight.initial_date.split("/").reverse().join("-"),
       final_date: freight.final_date.split("/").reverse().join("-"),
     };
 
     try {
-      const response = await createFreight(freightData);
-
-      if (response.status === 201) {
+      const response = await updateFreight(id, freightData);
+      if (response.status === 200) {
         setAlert({
-          message: "Frete cadastrado com sucesso!",
+          message: "Frete atualizado com sucesso!",
           type: "success",
           isAlertOpen: true,
-          navigateTo: "/client/freights",
+          navigateTo: `/client/freight/${id}`,
         });
       } else {
         setAlert({
-          message: response.data?.message || "Erro ao cadastrar o frete.",
+          message: response.data?.message || "Erro ao atualizar o frete.",
           type: "error",
           isAlertOpen: true,
         });
       }
     } catch (err) {
       setAlert({
-        message: err.response?.data?.message || "Erro ao cadastrar o frete.",
+        message: err.response?.data?.message || "Erro ao atualizar o frete.",
         type: "error",
         isAlertOpen: true,
       });
@@ -197,6 +259,29 @@ function CreateFreight() {
   const inputClasses = `w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-1 dark:border-gray-200`;
   const errorInputClasses = "border-2 border-red-500";
 
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen" style={style.page}>
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse">
+              <div className="h-20 bg-gray-300 dark:bg-gray-700 rounded-t-xl"></div>
+              <div className="p-8 space-y-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="w-24 h-4 bg-gray-300 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div className="w-full h-12 bg-gray-300 dark:bg-gray-700 rounded animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        <Loading isOpen={pageLoading} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen" style={style.page}>
       <div className="container mx-auto px-4 py-12">
@@ -206,10 +291,9 @@ function CreateFreight() {
           className="max-w-4xl mx-auto rounded-xl shadow-2xl overflow-hidden"
           style={style.container}
         >
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 py-6 px-8">
-            <h1 className="text-white text-2xl font-bold">
-              Cadastrar Novo Frete
-            </h1>
+          <div className="bg-gradient-to-r from-orange-600 to-red-700 py-6 px-8">
+            <h1 className="text-white text-2xl font-bold">Editar Frete</h1>
+            <p className="text-orange-100 text-sm mt-1">ID: #{id}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="p-8" noValidate>
@@ -414,22 +498,23 @@ function CreateFreight() {
                 whileHover={{ scale: 1.05 }}
                 className="px-6 py-3 rounded-lg cursor-pointer border"
                 style={style.cancelBtn}
-                onClick={() => navigate(-1)}
+                onClick={() => navigate(`/client/freights`)}
               >
                 Cancelar
               </motion.button>
               <motion.button
                 type="submit"
                 whileHover={{ scale: 1.05 }}
-                className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-medium"
+                className="px-6 py-3 rounded-lg bg-gradient-to-r from-orange-600 to-red-700 text-white font-medium"
                 disabled={loading}
               >
-                {loading ? "Cadastrando..." : "Cadastrar Frete"}
+                {loading ? "Atualizando..." : "Atualizar Frete"}
               </motion.button>
             </div>
           </form>
         </motion.div>
       </div>
+
       <Alert
         message={alert.message}
         isAlertOpen={alert.isAlertOpen}
@@ -437,8 +522,9 @@ function CreateFreight() {
         navigateTo={alert.type === "success" && alert.navigateTo}
         type={alert.type}
       />
+      <Loading isOpen={loading} />
     </div>
   );
 }
 
-export default CreateFreight;
+export default EditFreight;

@@ -19,7 +19,7 @@ function FreightCard({ freight }) {
         navigate(`/admin/freights/${freight.id}`);
         break;
       case "CLIENT":
-        navigate(`/client/freights/${freight.id}`);
+        navigate(`/client/freight/${freight.id}`);
         break;
       case "DRIVER":
         navigate(`/driver/freights/${freight.id}`);

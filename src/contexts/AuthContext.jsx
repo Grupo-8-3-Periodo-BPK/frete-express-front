@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
+import { useLocation } from "react-router-dom";
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -12,14 +13,30 @@ const ThemeContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 export const useTheme = () => useContext(ThemeContext);
 
+// Função para normalizar os dados do usuário e garantir que tanto id quanto user_id estejam disponíveis
+const normalizeUserData = (userData) => {
+  if (!userData) return null;
+  return {
+    ...userData,
+    id: userData.id || userData.user_id,
+    user_id: userData.user_id || userData.id,
+  };
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const location = useLocation();
 
   const role = user?.role;
   const token = user?.token;
+
+  // Função atualizada para setar o usuário com dados normalizados
+  const updateUser = (userData) => {
+    setUser(normalizeUserData(userData));
+  };
 
   // Configurar interceptor de REQUISIÇÃO para adicionar token
   useEffect(() => {
@@ -57,9 +74,23 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        if (
+          location.pathname.startsWith("/api/users/register/client") ||
+          location.pathname.startsWith("/api/users/register/driver")
+        ) {
+          setLoading(false);
+          return;
+        }
+        if (
+          location.pathname === "/login" ||
+          location.pathname.startsWith("/register")
+        ) {
+          setLoading(false);
+          return;
+        }
         const response = await api.post("/api/auth/validate-token");
         if (response.data.valid) {
-          setUser(response.data);
+          updateUser(response.data);
           setAuthenticated(true);
         }
       } catch (error) {
@@ -114,7 +145,7 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (response.status === 200) {
-        setUser(response.data);
+        updateUser(response.data);
         setAuthenticated(true);
       }
       return { success: true, data: response.data };

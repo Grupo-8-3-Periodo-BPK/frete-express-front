@@ -36,15 +36,11 @@ function SupportPage() {
 
         <form className="space-y-6">
           <div>
-            <label
-              className={`block mb-2 text-sm font-medium ${
-                darkMode ? "text-gray-200" : "text-gray-700"
-              }`}
-            >
+            <label className={`block mb-2 text-sm font-medium ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
               Seu email
             </label>
-            <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-3 rounded-lg">
-              <span className="text-gray-700 dark:text-gray-200">
+            <div className={`flex items-center gap-2 ${darkMode ? "bg-gray-800 border border-gray-700" : "bg-gray-100 border border-gray-300"} p-3 rounded-lg`}>
+              <span className={`${darkMode ? "text-gray-200" : "text-gray-700"}`}>
                 {user.email}
               </span>
             </div>

@@ -3,10 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { useTheme } from "../../contexts/AuthContext";
 import { BackButton } from "../../components/ui/button/Back";
 import { motion } from "framer-motion";
+import { registerDriver } from "../../services/user";
+import Alert from "../../components/ui/modal/Alert";
+import Loading from "../../components/ui/modal/Loading";
 
 function RegisterDriver() {
   const { darkMode } = useTheme();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [navigateTo, setNavigateTo] = useState(null);
+  const [alert, setAlert] = useState({
+    type: "success",
+    message: "",
+  });
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -26,6 +36,26 @@ function RegisterDriver() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await registerDriver(formData);
+      if (response.status === 201) {
+        showAlert("Motorista cadastrado com sucesso", "success");
+        navigate("/login");
+      } else {
+        showAlert(response.data.error || "Erro ao cadastrar motorista", "error");
+        setLoading(false);
+      }
+    } catch (error) {
+      showAlert("Erro ao cadastrar motorista", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showAlert = (message, type) => {
+    setAlert({ message, type });
+    setIsAlertOpen(true);
   };
 
   return (
@@ -217,7 +247,7 @@ function RegisterDriver() {
               type="submit"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`w-full py-3 px-4 rounded-lg font-medium text-white
+              className={`w-full py-3 px-4 rounded-lg font-medium text-white cursor-pointer
                 ${
                   darkMode
                     ? "bg-blue-600 hover:bg-blue-700"
@@ -234,6 +264,15 @@ function RegisterDriver() {
             </motion.button>
           </div>
         </motion.form>
+
+        <Loading isOpen={loading} />
+
+        <Alert
+          message={alert.message}
+          isAlertOpen={isAlertOpen}
+          setIsAlertOpen={setIsAlertOpen}
+          type={alert.type}
+        />
       </div>
     </div>
   );

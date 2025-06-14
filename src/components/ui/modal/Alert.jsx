@@ -3,11 +3,14 @@ import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
 
 
-function Alert({message,isAlertOpen,setIsAlertOpen,navigateTo,type="info"}) {
+function Alert({message,isAlertOpen,setIsAlertOpen,navigateTo, onClose,type="info"}) {
   const navigate = useNavigate();
 
   const handleClick = () => {
     setIsAlertOpen(false);
+    if(onClose){
+      onClose();
+    }
     if (navigateTo) {
       navigate(navigateTo);
     }

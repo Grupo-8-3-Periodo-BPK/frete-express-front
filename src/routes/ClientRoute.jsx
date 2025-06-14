@@ -6,12 +6,16 @@ import Support from "../pages/Client/Support";
 import CreateFreight from "../pages/Client/Freight/Create";
 import Rating from "../pages/Client/Rating";
 import Home from "../pages/Client/HomePage";
+import FreightDetails from "../pages/Client/Freight/Details";
+import EditFreight from "../pages/Client/Freight/Edit";
 
 const ClientRoute = [
   <Route key="home" path="/client/home" element={<Home />} />,
   <Route key="profile" path="/client/profile" element={<Profile />} />,
   <Route key="freights" path="/client/freights" element={<Freights />} />,
   <Route key="create-freight" path="/client/freight/create" element={<CreateFreight />} />,
+  <Route key="freight-details" path="/client/freight/:id" element={<FreightDetails />} />,
+  <Route key="edit-freight" path="/client/freight/:id/edit" element={<EditFreight />} />,
   <Route key="contracts" path="/client/contracts" element={<Contracts />} />,
   <Route key="support" path="/client/support" element={<Support />} />,
   <Route key="rating" path="/client/rating" element={<Rating />} />,

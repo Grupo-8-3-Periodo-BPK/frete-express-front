@@ -13,6 +13,8 @@ import Login from "./pages/Login/Login";
 import PublicRoute from "./routes/PublicRoute";
 import { Link } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
+import RegisterClient from "./pages/Login/RegisterClient";
+import RegisterDriver from "./pages/Login/RegisterDriver";
 // Componente de carregamento
 const Loading = () => {
   return (
@@ -50,7 +52,9 @@ function App() {
           {/* Rotas públicas */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
-          <Route>{PublicRoute}</Route>
+          <Route path="/register" element={<Register />} />
+          <Route path="/register/client" element={<RegisterClient />} />
+          <Route path="/register/driver" element={<RegisterDriver />} />
 
           {/* Rotas protegidas  */}
           <Route element={<ProtectedRoute />}>

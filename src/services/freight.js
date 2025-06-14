@@ -48,3 +48,23 @@ export const updateFreight = async (id, data) => {
         return err.response
     }
 };
+
+export const getIBGECities = async (state) => {
+    try {
+        const response = await fetch("https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome")
+        const data = await response.json()
+        return data
+    } catch (err) {
+        return err.response        
+    }
+}
+
+export const getIBGECitiesByState = async (state) => {
+    try {
+        const response = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${state}/municipios`)
+        const data = await response.json()
+        return data
+    } catch (err) {
+        return err.response
+    }
+}
