@@ -42,9 +42,18 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const requestInterceptor = api.interceptors.request.use(
       (config) => {
-        if (token) {
+        const isRecoveryRoute = config.url.includes("/api/recovery");
+
+        if (isRecoveryRoute) {
+          // Para rotas de recuperação, não envie credenciais (cookies)
+          // e garanta que nenhum token de autorização seja enviado.
+          config.withCredentials = false;
+          delete config.headers.Authorization;
+        } else if (token) {
+          // Para todas as outras rotas protegidas, adicione o token se o usuário estiver autenticado.
           config.headers.Authorization = `Bearer ${token}`;
         }
+
         return config;
       },
       (error) => {
@@ -76,7 +85,8 @@ export const AuthProvider = ({ children }) => {
       try {
         if (
           location.pathname.startsWith("/api/users/register/client") ||
-          location.pathname.startsWith("/api/users/register/driver")
+          location.pathname.startsWith("/api/users/register/driver") ||
+          location.pathname.startsWith("/api/recovery")
         ) {
           setLoading(false);
           return;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth, useTheme } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import IconeFreteExpress from "../../assets/images/icone-frete-express.png";
+import RecoveryPassword from "../../components/ui/modal/RecoveryPassword";
 
 export default function Login() {
   const [loginInput, setLoginInput] = useState("");
@@ -11,6 +12,22 @@ export default function Login() {
   const { darkMode } = useTheme();
   const { login, authenticated, role } = useAuth();
   const navigate = useNavigate();
+
+  const [showRecoveryPassword, setShowRecoveryPassword] = useState(false);
+  const [recoveryStep, setRecoveryStep] = useState(1);
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+
+  const handleCloseRecoveryModal = () => {
+    setShowRecoveryPassword(false);
+  };
+
+  const handleRecoverySuccess = () => {
+    setShowRecoveryPassword(false);
+    setTimeout(() => {
+        setRecoveryStep(1);
+        setRecoveryEmail("");
+    }, 300);
+  };
 
   useEffect(() => {
     if (authenticated) {
@@ -181,13 +198,13 @@ export default function Login() {
               </button>
               <div className="text-center mt-4">
                 <a
-                  href="#"
-                  className={`text-sm sc-380:text-xs underline transition-colors 
-                ${
-                  darkMode
-                    ? "text-yellow-300 hover:text-yellow-200"
-                    : "text-blue-600 hover:text-blue-800"
-                }`}
+                  onClick={() => setShowRecoveryPassword(true)}
+                  className={`text-sm sc-380:text-xs underline transition-colors cursor-pointer
+                  ${
+                    darkMode
+                      ? "text-yellow-300 hover:text-yellow-200"
+                      : "text-blue-600 hover:text-blue-800"
+                  }`}
                 >
                   Esqueceu sua senha?
                 </a>
@@ -196,6 +213,15 @@ export default function Login() {
           </div>
         </div>
       </div>
+      <RecoveryPassword 
+        isOpen={showRecoveryPassword}
+        onClose={handleCloseRecoveryModal}
+        onSuccess={handleRecoverySuccess}
+        step={recoveryStep}
+        setStep={setRecoveryStep}
+        email={recoveryEmail}
+        setEmail={setRecoveryEmail}
+      />
     </div>
   );
 }

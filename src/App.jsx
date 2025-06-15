@@ -31,15 +31,23 @@ const NotFound = () => {
   const role = user?.role;
 
   return (
-    <div style={{ textAlign: "center", padding: "50px" }}>
-      <h1>Página não encontrada</h1>
-      <p className="text-gray-500 mb-4">A página que você está procurando não existe.</p>
-      <Link 
-        to={`${role === "ADMIN" ? "/admin" : role === "CLIENT" ? "/client/freights" : "/driver/freights"}`} 
-        className="px-4 py-2 mt-8 text-green-900 bg-white rounded-md hover:bg-gray-100"
+    <div className="p-4 text-center font-poppins">
+      <h1 className="text-2xl font-bold mb-4">Página não encontrada</h1>
+      <p className="text-gray-500 mb-4">
+        A página que você está procurando não existe.
+      </p>
+      <Link
+        to={`${
+          role === "ADMIN"
+            ? "/admin"
+            : role === "CLIENT"
+            ? "/client/freights"
+            : "/driver/freights"
+        }`}
+        className="px-4 py-2 mt-8 text-green-900 bg-white rounded-md hover:bg-gray-100 cursor-pointer"
       >
         Voltar para o início
-      </Link>   
+      </Link>
     </div>
   );
 };
@@ -59,13 +67,25 @@ function App() {
           {/* Rotas protegidas  */}
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
-              <Route element={<RequirePermission permissions={["ADMIN"]} fallback={"/"} />}>
+              <Route
+                element={
+                  <RequirePermission permissions={["ADMIN"]} fallback={"/"} />
+                }
+              >
                 {AdminRoute}
               </Route>
-              <Route element={<RequirePermission permissions={["CLIENT"]} fallback={"/"} />}>
+              <Route
+                element={
+                  <RequirePermission permissions={["CLIENT"]} fallback={"/"} />
+                }
+              >
                 {ClientRoute}
               </Route>
-              <Route element={<RequirePermission permissions={["DRIVER"]} fallback={"/"} />}>
+              <Route
+                element={
+                  <RequirePermission permissions={["DRIVER"]} fallback={"/"} />
+                }
+              >
                 {DriverRoute}
               </Route>
             </Route>
