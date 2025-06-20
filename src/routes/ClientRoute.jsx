@@ -5,12 +5,10 @@ import Contracts from "../pages/Client/Contract/Contract";
 import Support from "../pages/Client/Support";
 import CreateFreight from "../pages/Client/Freight/Create";
 import Rating from "../pages/Client/Rating";
-import Home from "../pages/Client/HomePage";
 import FreightDetails from "../pages/Client/Freight/Details";
 import EditFreight from "../pages/Client/Freight/Edit";
 
 const ClientRoute = [
-  <Route key="home" path="/client/home" element={<Home />} />,
   <Route key="profile" path="/client/profile" element={<Profile />} />,
   <Route key="freights" path="/client/freights" element={<Freights />} />,
   <Route key="create-freight" path="/client/freight/create" element={<CreateFreight />} />,

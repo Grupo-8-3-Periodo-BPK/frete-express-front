@@ -1,47 +1,75 @@
 import React, { useState, useEffect } from "react";
-import { useTheme } from "../../../contexts/AuthContext.jsx";
+import { useTheme, useAuth } from "../../../contexts/AuthContext.jsx";
 import { useNavigate, useParams } from "react-router-dom";
 import { BackButton } from "../../../components/ui/button/Back.jsx";
 import { getFreightById, deleteFreight } from "../../../services/freight.js";
+import {
+  getContractsByFreight,
+  approveContract,
+} from "../../../services/contract.js";
+import ContractCard from "../../../components/ui/card/Contract.jsx";
 import Loading from "../../../components/ui/modal/Loading.jsx";
 import Alert from "../../../components/ui/modal/Alert.jsx";
 import Confirmation from "../../../components/ui/modal/Confirmation.jsx";
 
 function FreightDetails() {
   const { darkMode } = useTheme();
+  const { user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
   const [freight, setFreight] = useState(null);
+  const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState("info");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchFreight = async () => {
-      try {
-        const response = await getFreightById(id);
-        if (response.status === 200) {
-          setFreight(response.data);
-        } else {
-          setError(response.data.message);
-        }
-      } catch (err) {
-        setError(err.response?.data?.message || "Erro ao carregar frete");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchFreightData = async () => {
+    setLoading(true);
+    try {
+      const freightResponse = await getFreightById(id);
+      setFreight(freightResponse);
 
+      if (freightResponse.status === "AVAILABLE") {
+        const contractsResponse = await getContractsByFreight(id);
+        setCandidates(contractsResponse);
+      }
+    } catch (err) {
+      setError(err.message || "Erro ao carregar dados do frete");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (id) {
-      fetchFreight();
+      fetchFreightData();
     }
   }, [id]);
+
+  const handleApproveContract = async (contractId) => {
+    setLoading(true);
+    try {
+      await approveContract(contractId);
+      setAlertMessage(
+        "Motorista aprovado com sucesso! O frete foi fechado para novas propostas."
+      );
+      setAlertType("success");
+      setIsAlertOpen(true);
+      // Recarrega os dados para refletir as mudanças
+      fetchFreightData();
+    } catch (err) {
+      setAlertMessage(err.message || "Erro ao aprovar a proposta.");
+      setAlertType("error");
+      setIsAlertOpen(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -84,24 +112,25 @@ function FreightDetails() {
   const confirmDelete = async () => {
     setIsConfirmOpen(false);
     setIsDeleting(true);
-    setDeleteError(null);
     try {
-      const response = await deleteFreight(id);
-      if (response.status === 200 || response.status === 204) {
-        setAlertMessage("Frete removido com sucesso!");
-        setAlertType("success");
-        setIsAlertOpen(true);
-      } else {
-        setDeleteError(
-          response.data?.message || "Ocorreu um erro ao remover o frete."
-        );
-      }
+      await deleteFreight(id);
+      setAlertMessage("Frete removido com sucesso!");
+      setAlertType("success");
     } catch (err) {
-      setDeleteError(
-        err.response?.data?.message || "Ocorreu um erro ao remover o frete."
-      );
+      // Extrai a mensagem de erro específica da resposta da API
+      const errorMessage = err.data || "Ocorreu um erro ao remover o frete.";
+      setAlertMessage(errorMessage);
+      setAlertType("error");
     } finally {
       setIsDeleting(false);
+      setIsAlertOpen(true); // Abre o alerta para sucesso ou erro
+    }
+  };
+
+  const handleAlertClose = () => {
+    setIsAlertOpen(false); // Fecha o alerta
+    if (alertType === "success") {
+      navigate("/client/freights"); // Redireciona apenas em caso de sucesso
     }
   };
 
@@ -179,6 +208,8 @@ function FreightDetails() {
   if (!freight) {
     return null;
   }
+
+  const isLocked = freight?.status === "CLOSED";
 
   return (
     <div className={`min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
@@ -268,277 +299,137 @@ function FreightDetails() {
 
           {/* Conteúdo do Card */}
           <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Informações Gerais */}
-              <div className="space-y-6">
-                <div>
-                  <h3
-                    className={`text-lg font-semibold mb-4 ${
-                      darkMode ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    Informações Gerais
-                  </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label
-                        className={`block text-sm font-medium mb-1 ${
-                          darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}
-                      >
-                        Produto
-                      </label>
-                      <p
-                        className={`text-sm ${
-                          darkMode ? "text-gray-400" : "text-gray-600"
-                        }`}
-                      >
-                        {freight.name || freight.produto || "Não informado"}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label
-                        className={`block text-sm font-medium mb-1 ${
-                          darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}
-                      >
-                        Preço
-                      </label>
-                      <p
-                        className={`text-lg font-semibold ${
-                          darkMode ? "text-green-400" : "text-green-600"
-                        }`}
-                      >
-                        {formatCurrency(freight.price)}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label
-                        className={`block text-sm font-medium mb-1 ${
-                          darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}
-                      >
-                        Peso
-                      </label>
-                      <p
-                        className={`text-sm ${
-                          darkMode ? "text-gray-400" : "text-gray-600"
-                        }`}
-                      >
-                        {formatWeight(freight.weight)}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label
-                        className={`block text-sm font-medium mb-1 ${
-                          darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}
-                      >
-                        Dimensões (A × L × C)
-                      </label>
-                      <p
-                        className={`text-sm ${
-                          darkMode ? "text-gray-400" : "text-gray-600"
-                        }`}
-                      >
-                        {formatDimensions(
-                          freight.height,
-                          freight.width,
-                          freight.length
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Datas */}
-                <div>
-                  <h3
-                    className={`text-lg font-semibold mb-4 ${
-                      darkMode ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    Cronograma
-                  </h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label
-                        className={`block text-sm font-medium mb-1 ${
-                          darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}
-                      >
-                        Data de Início
-                      </label>
-                      <p
-                        className={`text-sm ${
-                          darkMode ? "text-gray-400" : "text-gray-600"
-                        }`}
-                      >
-                        {formatDate(freight.initial_date)}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label
-                        className={`block text-sm font-medium mb-1 ${
-                          darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}
-                      >
-                        Data de Entrega
-                      </label>
-                      <p
-                        className={`text-sm ${
-                          darkMode ? "text-gray-400" : "text-gray-600"
-                        }`}
-                      >
-                        {formatDate(freight.final_date)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              {/* Detalhes do Frete */}
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Origem
+                </p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                  {freight.origin_city}, {freight.origin_state}
+                </p>
               </div>
-
-              {/* Localização */}
-              <div className="space-y-6">
-                <h3
-                  className={`text-lg font-semibold mb-4 ${
-                    darkMode ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Localização
-                </h3>
-                <div className="flex items-center gap-4">
-                  {/* Origem */}
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-4 h-4 text-green-600 dark:text-green-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                      </div>
-                      <h4
-                        className={`font-medium ${
-                          darkMode ? "text-white" : "text-gray-900"
-                        }`}
-                      >
-                        Origem
-                      </h4>
-                    </div>
-                    <p
-                      className={`text-sm ${
-                        darkMode ? "text-gray-400" : "text-gray-600"
-                      } ml-10`}
-                    >
-                      {freight.origin_city}, {freight.origin_state}
-                    </p>
-                  </div>
-
-                  {/* Linha conectora */}
-                  <div className="flex items-center justify-center mb-6">
-                    <div className="w-0.5 h-8 bg-gray-300 dark:bg-gray-600"></div>
-                  </div>
-
-                  {/* Destino */}
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-4 h-4 text-red-600 dark:text-red-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                      </div>
-                      <h4
-                        className={`font-medium ${
-                          darkMode ? "text-white" : "text-gray-900"
-                        }`}
-                      >
-                        Destino
-                      </h4>
-                    </div>
-                    <p
-                      className={`text-sm ${
-                        darkMode ? "text-gray-400" : "text-gray-600"
-                      } ml-10`}
-                    >
-                      {freight.destination_city}, {freight.destination_state}
-                    </p>
-                  </div>
-                </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Destino
+                </p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                  {freight.destination_city}, {freight.destination_state}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Data de Coleta
+                </p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                  {formatDate(freight.initial_date)}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Data de Entrega
+                </p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                  {formatDate(freight.final_date)}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Valor
+                </p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                  {formatCurrency(freight.price)}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Peso
+                </p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                  {formatWeight(freight.weight)}
+                </p>
+              </div>
+              <div className="space-y-1 col-span-1 md:col-span-2">
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Dimensões (Altura x Largura x Comprimento)
+                </p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                  {formatDimensions(
+                    freight.height,
+                    freight.width,
+                    freight.length
+                  )}
+                </p>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Footer do Card */}
-          <div className="p-6 border-t border-gray-200 dark:border-gray-700">
-            {deleteError && (
-              <Alert
-                isAlertOpen={!!deleteError}
-                setIsAlertOpen={() => setDeleteError(null)}
-                message={deleteError}
-                type="error"
-              />
-            )}
-            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
-              <button
-                onClick={() => navigate("/client/freights")}
-                className={`px-6 py-2 rounded-lg border transition-colors cursor-pointer ${
-                  darkMode
-                    ? "border-gray-600 text-gray-300 hover:bg-gray-700"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                Voltar para Lista
-              </button>
-              <button
-                onClick={() => navigate(`/client/freight/${freight.id}/edit`)}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
-              >
-                Editar Frete
-              </button>
-              <button
-                onClick={handleDeleteFreight}
-                disabled={isDeleting}
-                className={`px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-400 transition-colors cursor-pointer ${
-                  isDeleting ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-              >
-                {isDeleting ? "Removendo..." : "Remover Frete"}
-              </button>
+        {/* Seção de Candidaturas */}
+        {freight.status === "AVAILABLE" && candidates.length > 0 && (
+          <div className="mt-8">
+            <h2
+              className={`text-2xl font-bold mb-4 ${
+                darkMode ? "text-white" : "text-gray-900"
+              }`}
+            >
+              Propostas de Motoristas
+            </h2>
+            <div className="grid grid-cols-1 gap-6">
+              {candidates.map((candidate) => (
+                <ContractCard
+                  key={candidate.id}
+                  contract={candidate}
+                  darkMode={darkMode}
+                  userRole={user.role}
+                  onApprove={handleApproveContract}
+                />
+              ))}
             </div>
+          </div>
+        )}
+
+        {freight.status === "AVAILABLE" &&
+          candidates.length === 0 &&
+          !loading && (
+            <div className="mt-8 text-center py-8 px-4 border-2 border-dashed rounded-lg">
+              <p className="text-gray-500 dark:text-gray-400">
+                Nenhum motorista se candidatou a este frete ainda.
+              </p>
+            </div>
+          )}
+
+        {/* Footer do Card */}
+        <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+            <button
+              onClick={() => navigate("/client/freights")}
+              className={`px-6 py-2 rounded-lg border transition-colors cursor-pointer ${
+                darkMode
+                  ? "border-gray-600 text-gray-300 hover:bg-gray-700"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              Voltar para Lista
+            </button>
+            <button
+              onClick={() => navigate(`/client/freight/${freight.id}/edit`)}
+              disabled={isLocked}
+              className={`px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer ${
+                isLocked ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              Editar Frete
+            </button>
+            <button
+              onClick={handleDeleteFreight}
+              disabled={isDeleting || isLocked}
+              className={`px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-400 transition-colors cursor-pointer ${
+                isDeleting || isLocked ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              {isDeleting ? "Removendo..." : "Remover Frete"}
+            </button>
           </div>
         </div>
       </div>
@@ -547,17 +438,17 @@ function FreightDetails() {
         isOpen={isConfirmOpen}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={confirmDelete}
-        title="Confirmar Remoção"
-        message="Tem certeza que deseja remover este frete? Esta ação não pode ser desfeita."
+        title="Confirmar Exclusão"
+        message="Tem certeza de que deseja remover este frete? Esta ação não pode ser desfeita e irá cancelar quaisquer propostas existentes."
         darkMode={darkMode}
       />
 
       <Alert
         isAlertOpen={isAlertOpen}
         setIsAlertOpen={setIsAlertOpen}
+        onClose={handleAlertClose}
         message={alertMessage}
         type={alertType}
-        navigateTo={alertType === "success" ? "/client/freights" : undefined}
       />
 
       <Loading isOpen={loading || isDeleting} />

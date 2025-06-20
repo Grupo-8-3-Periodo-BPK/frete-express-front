@@ -123,18 +123,20 @@ function CreateFreight() {
       setLoading(false);
       return;
     }
+
     const freightData = {
       ...freight,
-      user_id: Number(user.id),
       price: parseFloat(freight.price.replace(/[^\d,]/g, "").replace(",", ".")),
       initial_date: freight.initial_date.split("/").reverse().join("-"),
       final_date: freight.final_date.split("/").reverse().join("-"),
     };
 
-    try {
-      const response = await createFreight(freightData);
+    delete freightData.user_id;
 
-      if (response.status === 201) {
+    try {
+      const savedFreight = await createFreight(freightData);
+
+      if (savedFreight) {
         setAlert({
           message: "Frete cadastrado com sucesso!",
           type: "success",
@@ -143,14 +145,14 @@ function CreateFreight() {
         });
       } else {
         setAlert({
-          message: response.data?.message || "Erro ao cadastrar o frete.",
+          message: "Erro desconhecido ao cadastrar o frete.",
           type: "error",
           isAlertOpen: true,
         });
       }
     } catch (err) {
       setAlert({
-        message: err.response?.data?.message || "Erro ao cadastrar o frete.",
+        message: err.message || "Erro ao cadastrar o frete.",
         type: "error",
         isAlertOpen: true,
       });

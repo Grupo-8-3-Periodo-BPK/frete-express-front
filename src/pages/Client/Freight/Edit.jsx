@@ -56,32 +56,23 @@ function EditFreight() {
 
         // Carrega dados do frete
         if (id) {
-          const response = await getFreightById(id);
-          if (response.status === 200) {
-            const freightData = response.data;
+          const freightData = await getFreightById(id);
 
-            // Formata os dados para o formulário
-            setFreight({
-              name: freightData.name || "",
-              price: formatCurrencyFromNumber(freightData.price),
-              weight: freightData.weight?.toString() || "",
-              height: freightData.height?.toString() || "",
-              width: freightData.width?.toString() || "",
-              length: freightData.length?.toString() || "",
-              origin_city: freightData.origin_city || "",
-              origin_state: freightData.origin_state || "",
-              destination_city: freightData.destination_city || "",
-              destination_state: freightData.destination_state || "",
-              initial_date: formatDateFromAPI(freightData.initial_date),
-              final_date: formatDateFromAPI(freightData.final_date),
-            });
-          } else {
-            setAlert({
-              message: "Erro ao carregar dados do frete",
-              type: "error",
-              isAlertOpen: true,
-            });
-          }
+          // Formata os dados para o formulário
+          setFreight({
+            name: freightData.name || "",
+            price: formatCurrencyFromNumber(freightData.price),
+            weight: freightData.weight?.toString() || "",
+            height: freightData.height?.toString() || "",
+            width: freightData.width?.toString() || "",
+            length: freightData.length?.toString() || "",
+            origin_city: freightData.origin_city || "",
+            origin_state: freightData.origin_state || "",
+            destination_city: freightData.destination_city || "",
+            destination_state: freightData.destination_state || "",
+            initial_date: formatDateFromAPI(freightData.initial_date),
+            final_date: formatDateFromAPI(freightData.final_date),
+          });
         }
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
@@ -195,24 +186,16 @@ function EditFreight() {
     };
 
     try {
-      const response = await updateFreight(id, freightData);
-      if (response.status === 200) {
-        setAlert({
-          message: "Frete atualizado com sucesso!",
-          type: "success",
-          isAlertOpen: true,
-          navigateTo: `/client/freight/${id}`,
-        });
-      } else {
-        setAlert({
-          message: response.data?.message || "Erro ao atualizar o frete.",
-          type: "error",
-          isAlertOpen: true,
-        });
-      }
+      await updateFreight(id, freightData);
+      setAlert({
+        message: "Frete atualizado com sucesso!",
+        type: "success",
+        isAlertOpen: true,
+        navigateTo: `/client/freight/${id}`,
+      });
     } catch (err) {
       setAlert({
-        message: err.response?.data?.message || "Erro ao atualizar o frete.",
+        message: err.message || "Erro ao atualizar o frete.",
         type: "error",
         isAlertOpen: true,
       });

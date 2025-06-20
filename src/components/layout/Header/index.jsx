@@ -99,8 +99,8 @@ export default function Header() {
   // O logo leva para uma página inicial diferente dependendo do perfil.
   const homePath = {
     ADMIN: "/admin",
-    CLIENT: "/client/profile",
-    DRIVER: "/driver/profile",
+    CLIENT: "/client/freights",
+    DRIVER: "/driver/freights",
   }[user?.role] || "/";
 
   return (
