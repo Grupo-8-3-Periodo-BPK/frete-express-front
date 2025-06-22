@@ -15,6 +15,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import Map from "../Map";
 import { getLatestTrackingForContract } from "../../../services/tracking";
+import { getFreightById } from "../../../services/freight";
 import {
   getRouteDirections,
   getCoordinatesForAddress,
@@ -90,11 +91,9 @@ const ContractCard = ({
   // Efeito para buscar a localização em tempo real
   useEffect(() => {
     // Só executa se o contrato tiver um status que permita rastreamento
-    const shouldTrack = ["ACTIVE", "IN_PROGRESS", "COMPLETED"].includes(
-      contract.status
-    );
+    const shouldTrack = ["ACTIVE", "IN_PROGRESS"].includes(contract.status);
 
-    if (shouldTrack) {
+    if (shouldTrack && userRole === "CLIENT") {
       const fetchLocationAndRoute = async () => {
         try {
           const response = await getLatestTrackingForContract(contract.id);
@@ -132,12 +131,10 @@ const ContractCard = ({
         }
       };
 
-      if (userRole === "CLIENT") {
-        fetchLocationAndRoute(); // Busca a primeira vez imediatamente
-        if (contract.status === "IN_PROGRESS") {
-          const intervalId = setInterval(fetchLocationAndRoute, 15000); // E depois a cada 15 segundos
-          return () => clearInterval(intervalId); // Limpa o intervalo
-        }
+      fetchLocationAndRoute(); // Busca a primeira vez imediatamente
+      if (contract.status === "IN_PROGRESS") {
+        const intervalId = setInterval(fetchLocationAndRoute, 15000); // E depois a cada 15 segundos
+        return () => clearInterval(intervalId); // Limpa o intervalo
       }
     }
   }, [contract.id, contract.status, userRole, route.length]);
@@ -219,9 +216,9 @@ const ContractCard = ({
         </div>
       </div>
 
-      {/* Mapa de Rastreamento (só aparece se o contrato estiver em andamento, ativo ou concluído) */}
+      {/* Mapa de Rastreamento (só aparece se o contrato estiver em andamento ou ativo) */}
       {userRole === "CLIENT" &&
-        ["ACTIVE", "IN_PROGRESS", "COMPLETED"].includes(contract.status) && (
+        ["ACTIVE", "IN_PROGRESS"].includes(contract.status) && (
           <div className="mt-4">
             <h3 className="text-lg font-semibold mb-2 dark:text-white">
               Rastreamento em Tempo Real
