@@ -11,6 +11,7 @@ import Loading from "../../components/ui/modal/Loading";
 import Alert from "../../components/ui/modal/Alert";
 import { getContractById } from "../../services/contract";
 import { getFreightById } from "../../services/freight";
+import { getStateFullName } from "../../utils/stateUtils";
 
 const TrackingPage = () => {
   const { id: contractId } = useParams();
@@ -97,8 +98,13 @@ const TrackingPage = () => {
 
       setLoading(true);
       try {
-        const originAddress = `${freightDetails.origin_city}, ${freightDetails.origin_state}, Brasil`;
-        const destinationAddress = `${freightDetails.destination_city}, ${freightDetails.destination_state}, Brasil`;
+        const originState = getStateFullName(freightDetails.origin_state);
+        const destinationState = getStateFullName(
+          freightDetails.destination_state
+        );
+
+        const originAddress = `${freightDetails.origin_city}, ${originState}, Brasil`;
+        const destinationAddress = `${freightDetails.destination_city}, ${destinationState}, Brasil`;
 
         const [originCoordString, destinationCoordString] = await Promise.all([
           getCoordinatesForAddress(originAddress),

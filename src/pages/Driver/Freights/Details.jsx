@@ -10,6 +10,7 @@ import {
   getCoordinatesForAddress,
   getRouteDirections,
 } from "../../../services/route.js";
+import { getStateFullName } from "../../../utils/stateUtils";
 // O import do mapa continua o mesmo
 import Map from "../../../components/ui/Map.jsx";
 
@@ -50,8 +51,11 @@ function DriverFreightDetails() {
         setFreight(data);
 
         if (data && data.origin_city && data.destination_city) {
-          const originAddress = `${data.origin_city}, ${data.origin_state}, Brasil`;
-          const destinationAddress = `${data.destination_city}, ${data.destination_state}, Brasil`;
+          const originState = getStateFullName(data.origin_state);
+          const destinationState = getStateFullName(data.destination_state);
+
+          const originAddress = `${data.origin_city}, ${originState}, Brasil`;
+          const destinationAddress = `${data.destination_city}, ${destinationState}, Brasil`;
 
           // --- LÓGICA DE COORDENADAS E ROTA MAIS CLARA ---
 

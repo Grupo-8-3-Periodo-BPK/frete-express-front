@@ -115,9 +115,9 @@ const Map = ({ origin, destination, route, position }) => {
       )}
 
       {/* Marcador de Posição Atual (Rastreamento) */}
-      {position && position.coords && (
-        <Marker position={position.coords} icon={truckIcon}>
-          <Popup>{position.label || "Localização atual"}</Popup>
+      {origin && origin.coords && (
+        <Marker position={origin.coords} icon={truckIcon}>
+          <Popup>{origin.label || "Localização atual"}</Popup>
         </Marker>
       )}
 

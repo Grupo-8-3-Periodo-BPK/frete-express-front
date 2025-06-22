@@ -20,6 +20,8 @@ import {
   getRouteDirections,
   getCoordinatesForAddress,
 } from "../../../services/route";
+import { getStateFullName } from "../../../utils/stateUtils";
+import { getDistanceFromLatLonInKm } from "../../../utils/mapUtils";
 
 // Funções utilitárias
 const formatCurrency = (value) =>
@@ -96,34 +98,76 @@ const ContractCard = ({
     if (shouldTrack && userRole === "CLIENT") {
       const fetchLocationAndRoute = async () => {
         try {
-          const response = await getLatestTrackingForContract(contract.id);
-          if (response && response.data) {
-            const {
-              currentLatitude,
-              currentLongitude,
-              originLatitude,
-              originLongitude,
-              destinationLatitude,
-              destinationLongitude,
-            } = response.data;
+          // 1. Busca os detalhes do frete para obter os endereços corretos
+          const freight = await getFreightById(contract.freightId);
+          if (!freight) return;
 
-            // PADRONIZADO: Todos os dados de localização são objetos.
-            setCurrentLocation({ coords: [currentLatitude, currentLongitude] });
-            setOrigin({ coords: [originLatitude, originLongitude] });
-            setDestination({
-              coords: [destinationLatitude, destinationLongitude],
-            });
+          // 2. Monta os endereços de forma robusta
+          const originState = getStateFullName(freight.origin_state);
+          const destinationState = getStateFullName(freight.destination_state);
+          const originAddress = `${freight.origin_city}, ${originState}, Brasil`;
+          const destinationAddress = `${freight.destination_city}, ${destinationState}, Brasil`;
 
-            // Busca a rota apenas uma vez para não sobrecarregar
-            if (route.length === 0) {
-              const routeResponse = await getRouteDirections(
-                `${originLongitude},${originLatitude}`,
-                `${destinationLongitude},${destinationLatitude}`
+          // 3. Busca as coordenadas para a rota
+          const [originCoordString, destinationCoordString] = await Promise.all(
+            [
+              getCoordinatesForAddress(originAddress),
+              getCoordinatesForAddress(destinationAddress),
+            ]
+          );
+
+          const originCoords = originCoordString
+            .split(",")
+            .map(Number)
+            .reverse();
+          const destinationCoords = destinationCoordString
+            .split(",")
+            .map(Number)
+            .reverse();
+
+          setOrigin({ coords: originCoords });
+          setDestination({ coords: destinationCoords });
+
+          // 4. Busca a rota do mapa
+          if (route.length === 0) {
+            const routeResponse = await getRouteDirections(
+              originCoordString,
+              destinationCoordString
+            );
+            if (routeResponse.data && routeResponse.data.coordinates) {
+              setRoute(routeResponse.data.coordinates);
+            }
+          }
+
+          // 5. Busca a localização atual do motorista e valida a distância
+          const trackingResponse = await getLatestTrackingForContract(
+            contract.id
+          );
+          if (trackingResponse && trackingResponse.data) {
+            const driverCoords = [
+              trackingResponse.data.originLatitude,
+              trackingResponse.data.originLongitude,
+            ];
+
+            // Validação: Só mostra o pino se ele estiver a uma distância razoável
+            const routeDistance = getDistanceFromLatLonInKm(
+              originCoords,
+              destinationCoords
+            );
+            const driverDistance = getDistanceFromLatLonInKm(
+              originCoords,
+              driverCoords
+            );
+
+            // Permite uma margem de 50% da distância total da rota, mais 50km fixos.
+            if (driverDistance < routeDistance * 1.5 + 50) {
+              setCurrentLocation({ coords: driverCoords });
+            } else {
+              // Se a distância for irreal, não mostra o pino.
+              setCurrentLocation(null);
+              console.warn(
+                "Localização do motorista descartada por ser inconsistente com a rota."
               );
-              // Acessa diretamente a lista de coordenadas
-              if (routeResponse.data && routeResponse.data.coordinates) {
-                setRoute(routeResponse.data.coordinates);
-              }
             }
           }
         } catch (error) {
@@ -137,7 +181,13 @@ const ContractCard = ({
         return () => clearInterval(intervalId); // Limpa o intervalo
       }
     }
-  }, [contract.id, contract.status, userRole, route.length]);
+  }, [
+    contract.id,
+    contract.freightId,
+    contract.status,
+    userRole,
+    route.length,
+  ]);
 
   // 3. A variável statusInfo agora usa a configuração correta.
   const statusInfo = statusConfig[contract.status] || statusConfig.DEFAULT;
