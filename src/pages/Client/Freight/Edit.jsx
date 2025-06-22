@@ -8,8 +8,10 @@ import {
   getFreightById,
   getIBGECities,
   getIBGECitiesByState,
+  deleteFreight,
 } from "../../../services/freight";
 import Loading from "../../../components/ui/modal/Loading";
+import Confirmation from "../../../components/ui/modal/Confirmation";
 
 function EditFreight() {
   const { darkMode } = useTheme();
@@ -46,6 +48,9 @@ function EditFreight() {
   const [originCities, setOriginCities] = useState([]);
   const [destinationCities, setDestinationCities] = useState([]);
 
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+
   // Carrega dados iniciais
   useEffect(() => {
     const loadInitialData = async () => {
@@ -57,6 +62,10 @@ function EditFreight() {
         // Carrega dados do frete
         if (id) {
           const freightData = await getFreightById(id);
+
+          if (freightData.status !== "AVAILABLE") {
+            setIsLocked(true);
+          }
 
           // Formata os dados para o formulário
           setFreight({
@@ -158,6 +167,32 @@ function EditFreight() {
     else if (v.length > 2) v = `${v.slice(0, 2)}/${v.slice(2)}`;
     setFreight((prev) => ({ ...prev, [name]: v }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: null }));
+  };
+
+  const handleDelete = () => {
+    setIsConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsConfirmOpen(false);
+    setLoading(true);
+    try {
+      await deleteFreight(id);
+      setAlert({
+        message: "Frete removido com sucesso!",
+        type: "success",
+        isAlertOpen: true,
+        navigateTo: "/client/freights",
+      });
+    } catch (err) {
+      setAlert({
+        message: err.message || "Ocorreu um erro ao remover o frete.",
+        type: "error",
+        isAlertOpen: true,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -274,9 +309,15 @@ function EditFreight() {
           className="max-w-4xl mx-auto rounded-xl shadow-2xl overflow-hidden"
           style={style.container}
         >
-          <div className="bg-gradient-to-r from-orange-600 to-red-700 py-6 px-8">
-            <h1 className="text-white text-2xl font-bold">Editar Frete</h1>
-            <p className="text-orange-100 text-sm mt-1">ID: #{id}</p>
+          <div className="p-6 rounded-t-xl bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+            <h1 className="text-2xl font-bold">Editar Frete</h1>
+            <p className="text-blue-200">ID: #{id}</p>
+            {isLocked && (
+              <p className="mt-2 p-3 bg-yellow-500/20 text-yellow-300 rounded-lg text-sm border border-yellow-500/30">
+                Este frete não pode ser editado pois já não está mais disponível
+                para propostas.
+              </p>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="p-8" noValidate>
@@ -287,6 +328,7 @@ function EditFreight() {
                   name="name"
                   value={freight.name}
                   onChange={handleChange}
+                  disabled={isLocked}
                   className={`${inputClasses} ${
                     errors.name && errorInputClasses
                   }`}
@@ -304,6 +346,7 @@ function EditFreight() {
                   value={freight.price}
                   onChange={handlePriceChange}
                   placeholder="R$ 0,00"
+                  disabled={isLocked}
                   className={`${inputClasses} ${
                     errors.price && errorInputClasses
                   }`}
@@ -323,6 +366,7 @@ function EditFreight() {
                   name="origin_state"
                   value={freight.origin_state}
                   onChange={handleChange}
+                  disabled={isLocked}
                   className={`${inputClasses} ${
                     errors.origin_state && errorInputClasses
                   }`}
@@ -345,7 +389,7 @@ function EditFreight() {
                   name="origin_city"
                   value={freight.origin_city}
                   onChange={handleChange}
-                  disabled={!freight.origin_state}
+                  disabled={!freight.origin_state || isLocked}
                   className={`${inputClasses} ${
                     errors.origin_city && errorInputClasses
                   }`}
@@ -372,6 +416,7 @@ function EditFreight() {
                   name="destination_state"
                   value={freight.destination_state}
                   onChange={handleChange}
+                  disabled={isLocked}
                   className={`${inputClasses} ${
                     errors.destination_state && errorInputClasses
                   }`}
@@ -394,7 +439,7 @@ function EditFreight() {
                   name="destination_city"
                   value={freight.destination_city}
                   onChange={handleChange}
-                  disabled={!freight.destination_state}
+                  disabled={!freight.destination_state || isLocked}
                   className={`${inputClasses} ${
                     errors.destination_city && errorInputClasses
                   }`}
@@ -428,6 +473,7 @@ function EditFreight() {
                     type="number"
                     value={freight[name]}
                     onChange={handleChange}
+                    disabled={isLocked}
                     className={`${inputClasses} ${
                       errors[name] && errorInputClasses
                     }`}
@@ -447,6 +493,7 @@ function EditFreight() {
                     value={freight.initial_date}
                     onChange={handleDateChange}
                     placeholder="DD/MM/AAAA"
+                    disabled={isLocked}
                     className={`${inputClasses} ${
                       errors.initial_date && errorInputClasses
                     }`}
@@ -463,6 +510,7 @@ function EditFreight() {
                     value={freight.final_date}
                     onChange={handleDateChange}
                     placeholder="DD/MM/AAAA"
+                    disabled={isLocked}
                     className={`${inputClasses} ${
                       errors.final_date && errorInputClasses
                     }`}
@@ -475,33 +523,52 @@ function EditFreight() {
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end space-x-4">
-              <motion.button
+            <div className="mt-8 flex justify-between items-center px-8 py-6 bg-gray-50 dark:bg-gray-700/50 rounded-b-xl">
+              <button
                 type="button"
-                whileHover={{ scale: 1.05 }}
-                className="px-6 py-3 rounded-lg cursor-pointer border"
-                style={style.cancelBtn}
-                onClick={() => navigate(`/client/freights`)}
+                onClick={handleDelete}
+                disabled={isLocked}
+                className="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-all duration-200 ease-in-out hover:scale-105 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
-                Cancelar
-              </motion.button>
-              <motion.button
-                type="submit"
-                whileHover={{ scale: 1.05 }}
-                className="px-6 py-3 rounded-lg bg-gradient-to-r from-orange-600 to-red-700 text-white font-medium"
-                disabled={loading}
-              >
-                {loading ? "Atualizando..." : "Atualizar Frete"}
-              </motion.button>
+                Excluir Frete
+              </button>
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/client/freight/${id}`)}
+                  className={`px-6 py-3 rounded-lg font-semibold border transition-all duration-200 ease-in-out hover:scale-105 cursor-pointer ${
+                    darkMode
+                      ? "bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600"
+                      : "bg-gray-200 border-gray-300 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || isLocked}
+                  className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-all duration-200 ease-in-out hover:scale-105 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  {loading ? "Salvando..." : "Atualizar Frete"}
+                </button>
+              </div>
             </div>
           </form>
         </motion.div>
       </div>
 
+      <Confirmation
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Confirmar Exclusão"
+        message="Tem certeza que deseja remover este frete? A ação não pode ser desfeita."
+      />
+
       <Alert
         message={alert.message}
         isAlertOpen={alert.isAlertOpen}
-        setIsAlertOpen={setAlert}
+        setIsAlertOpen={(isOpen) => setAlert({ ...alert, isAlertOpen: isOpen })}
         navigateTo={alert.type === "success" && alert.navigateTo}
         type={alert.type}
       />

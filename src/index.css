@@ -5,6 +5,17 @@
   --font-poppins: "Poppins", "sans-serif"
 }
 
+/* src/index.css */
+
+.leaflet-custom-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  border: 2px solid #fff;
+}
+
 /* Estilos globais para o tema */
 html, body {
   transition: background-color 0.3s ease, color 0.3s ease;
@@ -116,8 +127,10 @@ html.dark #freight-form select {
 }
 }
 
-/* Remover qualquer gradiente ou blur que possa estar interferindo */
-body.dark-mode *[class*="bg-gradient"],
-html.dark *[class*="bg-gradient"] {
-  background-image: none !important;
-}
+/* 
+  Reverter qualquer gradiente ou blur que possa estar interferindo
+  body.dark-mode *[class*="bg-gradient"],
+  html.dark *[class*="bg-gradient"] {
+    background-image: none !important;
+  } 
+*/

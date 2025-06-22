@@ -5,6 +5,7 @@ import React from "react";
 import App from "./App.jsx";
 import "./index.css";
 import "./styles/fonts.css";
+import "leaflet/dist/leaflet.css";
 
 const theme = localStorage.getItem("theme");
 if (

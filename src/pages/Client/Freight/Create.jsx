@@ -208,7 +208,7 @@ function CreateFreight() {
           className="max-w-4xl mx-auto rounded-xl shadow-2xl overflow-hidden"
           style={style.container}
         >
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 py-6 px-8">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-700 py-6 px-8 border-b border-gray-200 dark:border-gray-700">
             <h1 className="text-white text-2xl font-bold">
               Cadastrar Novo Frete
             </h1>
@@ -423,7 +423,7 @@ function CreateFreight() {
               <motion.button
                 type="submit"
                 whileHover={{ scale: 1.05 }}
-                className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-medium"
+                className="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-medium cursor-pointer"
                 disabled={loading}
               >
                 {loading ? "Cadastrando..." : "Cadastrar Frete"}

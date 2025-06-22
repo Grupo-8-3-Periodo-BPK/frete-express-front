@@ -146,8 +146,8 @@ const DriverFreights = () => {
 
       return (
         <button
-          onClick={() => navigate("/driver/contracts")}
-          className={`w-full ${statusColor} hover:opacity-90 text-white font-bold py-2 px-4 rounded-lg transition-colors`}
+          onClick={() => {if(statusText === "Candidatura Enviada") return; navigate("/driver/contracts")}}
+          className={`w-full ${statusColor} cursor-pointer hover:opacity-90 text-white font-bold py-2 px-4 rounded-lg transition-colors`}
         >
           {statusText}
         </button>
@@ -239,14 +239,6 @@ const DriverFreights = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-            </div>
-            <div
-              className={`text-sm ${
-                darkMode ? "text-gray-400" : "text-gray-500"
-              }`}
-            >
-              <Clock className="inline w-4 h-4 mr-1" />
-              Atualizado agora
             </div>
           </div>
         </div>
@@ -375,7 +367,7 @@ const DriverFreights = () => {
                     {renderApplicationButton(freight)}
                     <button
                       onClick={() => navigate(`/driver/freights/${freight.id}`)}
-                      className={`w-full flex items-center justify-center p-2 rounded-lg transition-colors ${
+                      className={`w-full flex cursor-pointer items-center justify-center p-2 rounded-lg transition-colors ${
                         darkMode
                           ? "bg-gray-700 hover:bg-gray-600"
                           : "bg-gray-200 hover:bg-gray-300"

@@ -15,7 +15,7 @@ const DriverRoute = [
   <Route key="freights" path="/driver/freights" element={<Freights />} />,
   <Route key="freight-details" path="/driver/freights/:id" element={<FreightDetail />} />,
   <Route key="vehicles" path="/driver/vehicles" element={<ManageVehicles />} />,
-  <Route key="tracking" path="/driver/tracking" element={<Tracking />} />,
+  <Route key="tracking" path="/driver/tracking/:id" element={<Tracking />} />,
   <Route key="contracts" path="/driver/contracts" element={<Contract />} />,
   <Route key="support" path="/driver/support" element={<Support />} />,
   <Route key="rating" path="/driver/rating" element={<Rating />} />,

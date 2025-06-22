@@ -86,7 +86,7 @@ export default function Header() {
               ? "border-b-2 border-blue-600" 
               : "bg-blue-50 dark:bg-blue-900/30"
           }`
-        : "text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400"
+        : `text-gray-600 hover:text-blue-600 ${darkMode ? "dark:text-gray-300 dark:hover:text-blue-400" : "text-gray-600 hover:text-blue-600"}`
       }
     `;
     return (
@@ -119,39 +119,39 @@ export default function Header() {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-2 lg:gap-4 xl:gap-6 flex-1 justify-center max-w-2xl">
+          <nav className="hidden text-xl md:flex items-center gap-2 lg:gap-4 xl:gap-6 flex-1 justify-center max-w-2xl">
             {navLinks.map((link) => <NavLink key={link.label} {...link} />)}
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3 xl:gap-4">
             
-            <div className="hidden xs:block">
+            <div className="xs:block">
               <ThemeToggle />
             </div>
             
-            <button className="relative p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <button className="relative p-1 cursor-pointer rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
               <Bell className="text-blue-700 dark:text-blue-400" size={20} />
               <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 flex items-center justify-center text-xs text-white">
                 3
               </span>
             </button>
             
-            <button className="rounded-full bg-blue-100 dark:bg-blue-900 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+            <button className="cursor-pointer rounded-full bg-blue-100 dark:bg-blue-900 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
               <span className="font-semibold text-blue-700 dark:text-blue-300 text-sm">
                 {user?.name?.charAt(0).toUpperCase()}
               </span>
             </button>
             
             <button 
-              className="group rounded-full p-1 sm:p-1.5 transition-colors bg-gray-100 hover:bg-red-100 dark:bg-gray-800 dark:hover:bg-red-500/20" 
+              className={`group cursor-pointer rounded-full p-1 sm:p-1.5 transition-colors bg-gray-100 hover:bg-red-100 ${darkMode ? "bg-gray-800" : "bg-gray-100"} dark:hover:bg-red-500/20` }
               onClick={logout} 
               title="Sair"
             >
-              <DoorClosed className="text-gray-700 transition-colors group-hover:text-red-500 dark:text-gray-300 dark:group-hover:text-red-400" size={16} />
+              <DoorClosed className={`transition-colors group-hover:text-red-500 ${darkMode ? "text-gray-300" : "text-gray-700"} dark:group-hover:text-red-400`} size={16} />
             </button>
             
             <button 
-              className="md:hidden p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" 
+              className="cursor-pointer md:hidden p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" 
               onClick={() => setIsMobileMenuOpen(true)}
             >
               <Menu size={24} className={darkMode ? "text-gray-200" : "text-gray-800"} />

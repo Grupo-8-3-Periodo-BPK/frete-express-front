@@ -126,6 +126,17 @@ export const completeContract = async (id) => {
   }
 };
 
+// Inicia o contrato (motorista)
+export const startContract = async (id) => {
+  try {
+    const response = await api.patch(`/api/contracts/${id}/start`);
+    return response.data;
+  } catch (error) {
+    console.error(`Erro ao iniciar o contrato ${id}:`, error.response?.data);
+    throw error.response?.data || new Error("Falha ao iniciar o contrato.");
+  }
+};
+
 // Deleta um contrato
 export const deleteContract = async (id) => {
   try {

@@ -1,22 +1,19 @@
 // src/components/FreightDetailView.jsx
 import React, { useState, useEffect } from "react";
-import {
-  Calendar,
-  MapPin,
-  Package,
-  Truck,
-  Weight,
-  Box,
-  AlertCircle,
-  Navigation,
-  ArrowLeft,
-  DollarSign,
-} from "lucide-react";
+import { MapPin, Package, AlertCircle } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { BackButton } from "../../../components/ui/button/Back.jsx";
 import { getFreightById } from "../../../services/freight.js";
+// NOVO: Importamos o useTheme aqui
 import { useTheme } from "../../../contexts/AuthContext";
+import {
+  getCoordinatesForAddress,
+  getRouteDirections,
+} from "../../../services/route.js";
+// O import do mapa continua o mesmo
+import Map from "../../../components/ui/Map.jsx";
 
+// ... (as funções formatCurrency, formatDate, formatWeight não mudam) ...
 const formatCurrency = (value) =>
   value
     ? new Intl.NumberFormat("pt-BR", {
@@ -37,7 +34,13 @@ function DriverFreightDetails() {
   const [freight, setFreight] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // NOVO: Obtemos o estado do darkMode
   const { darkMode } = useTheme();
+
+  // ESTADOS DO MAPA MELHORADOS
+  const [route, setRoute] = useState([]);
+  const [origin, setOrigin] = useState(null); // Armazena { coords, label }
+  const [destination, setDestination] = useState(null); // Armazena { coords, label }
 
   useEffect(() => {
     const fetchFreightDetails = async () => {
@@ -45,6 +48,55 @@ function DriverFreightDetails() {
         setLoading(true);
         const data = await getFreightById(id);
         setFreight(data);
+
+        if (data && data.origin_city && data.destination_city) {
+          const originAddress = `${data.origin_city}, ${data.origin_state}, Brasil`;
+          const destinationAddress = `${data.destination_city}, ${data.destination_state}, Brasil`;
+
+          // --- LÓGICA DE COORDENADAS E ROTA MAIS CLARA ---
+
+          // 1. Buscar coordenadas em paralelo para mais performance
+          const [originCoordString, destinationCoordString] = await Promise.all(
+            [
+              getCoordinatesForAddress(originAddress),
+              getCoordinatesForAddress(destinationAddress),
+            ]
+          );
+
+          // 2. Processar e definir os estados de origem e destino
+          const originCoords = originCoordString
+            .split(",")
+            .map(Number)
+            .reverse(); // Leaflet -> [lat, lon]
+          setOrigin({
+            coords: originCoords,
+            label: `${data.origin_city} - ${data.origin_state}`,
+          });
+
+          const destinationCoords = destinationCoordString
+            .split(",")
+            .map(Number)
+            .reverse(); // Leaflet -> [lat, lon]
+          setDestination({
+            coords: destinationCoords,
+            label: `${data.destination_city} - ${data.destination_state}`,
+          });
+
+          // 3. Buscar a rota com as coordenadas já obtidas
+          try {
+            const response = await getRouteDirections(
+              originCoordString,
+              destinationCoordString
+            );
+            // A resposta já vem no formato [lat, lon], perfeito!
+            const coordinates = response.data.coordinates;
+            setRoute(coordinates);
+          } catch (routeError) {
+            console.error("Erro ao buscar a rota:", routeError);
+            // A página continua funcionando, o mapa apenas mostrará os pontos sem a linha.
+            setRoute([]);
+          }
+        }
       } catch (err) {
         setError(
           err.message || "Não foi possível carregar os detalhes do frete."
@@ -59,6 +111,7 @@ function DriverFreightDetails() {
     }
   }, [id]);
 
+  // ... (o restante do seu componente: if loading, if error, etc., permanece IGUAL) ...
   if (loading) {
     return (
       <div
@@ -116,6 +169,7 @@ function DriverFreightDetails() {
       } py-8 px-4`}
     >
       <div className="max-w-4xl mx-auto">
+        {/* ... (Seu JSX para o cabeçalho e detalhes da carga não muda) ... */}
         <div className="mb-8">
           <BackButton message="Voltar" navigateTo="/driver/freights" />
           <h1
@@ -123,7 +177,7 @@ function DriverFreightDetails() {
               darkMode ? "text-white" : "text-gray-900"
             }`}
           >
-            {freight.name}
+            Frete de Móveis
           </h1>
           <p className={`${darkMode ? "text-gray-400" : "text-gray-600"}`}>
             Visualize os detalhes do frete e candidate-se se for do seu
@@ -216,6 +270,25 @@ function DriverFreightDetails() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Mapa da Rota */}
+        <div className="mt-8">
+          <h2
+            className={`text-2xl font-bold mb-4 ${
+              darkMode ? "text-white" : "text-gray-900"
+            }`}
+          >
+            Visualização da Rota
+          </h2>
+          <div
+            className={`rounded-lg shadow-lg overflow-hidden ${
+              darkMode ? "bg-gray-800" : "bg-white"
+            }`}
+          >
+            {/* CHAMADA AO MAPA ATUALIZADA */}
+            <Map origin={origin} destination={destination} route={route} />
           </div>
         </div>
       </div>

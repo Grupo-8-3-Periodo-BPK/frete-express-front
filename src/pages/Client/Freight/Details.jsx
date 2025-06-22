@@ -7,10 +7,13 @@ import {
   getContractsByFreight,
   approveContract,
 } from "../../../services/contract.js";
+import { getTrackingByContract } from "../../../services/tracking.js";
+import { getRouteDirections } from "../../../services/route.js";
 import ContractCard from "../../../components/ui/card/Contract.jsx";
 import Loading from "../../../components/ui/modal/Loading.jsx";
 import Alert from "../../../components/ui/modal/Alert.jsx";
 import Confirmation from "../../../components/ui/modal/Confirmation.jsx";
+import Map from "../../../components/ui/Map.jsx";
 
 function FreightDetails() {
   const { darkMode } = useTheme();
@@ -26,16 +29,38 @@ function FreightDetails() {
   const [alertMessage, setAlertMessage] = useState("");
   const [alertType, setAlertType] = useState("info");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [approvedContract, setApprovedContract] = useState(null);
+  const [driverLocation, setDriverLocation] = useState(null);
+  const [originLocation, setOriginLocation] = useState(null);
+  const [route, setRoute] = useState(null);
+  const [isTrackingLoading, setIsTrackingLoading] = useState(false);
 
   const fetchFreightData = async () => {
     setLoading(true);
+    setApprovedContract(null);
+    setDriverLocation(null);
+    setOriginLocation(null);
+    setRoute(null);
     try {
       const freightResponse = await getFreightById(id);
       setFreight(freightResponse);
 
+      const contractsResponse = await getContractsByFreight(id);
+
       if (freightResponse.status === "AVAILABLE") {
-        const contractsResponse = await getContractsByFreight(id);
         setCandidates(contractsResponse);
+      } else if (freightResponse.status === "CLOSED") {
+        const activeContract = contractsResponse.find(
+          (c) =>
+            c.status === "ACTIVE" ||
+            c.status === "IN_PROGRESS" ||
+            c.status === "COMPLETED"
+        );
+        if (activeContract) {
+          setApprovedContract(activeContract);
+          handleUpdateLocation(activeContract.id);
+        }
+        setCandidates([]);
       }
     } catch (err) {
       setError(err.message || "Erro ao carregar dados do frete");
@@ -68,6 +93,55 @@ function FreightDetails() {
       setIsAlertOpen(true);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRoute = async (origin, destination) => {
+    try {
+      const routeData = await getRouteDirections(origin, destination);
+      setRoute(routeData);
+    } catch (error) {
+      console.error("Erro ao buscar a rota:", error);
+    }
+  };
+
+  const handleUpdateLocation = async (contractIdToUpdate) => {
+    const contractId = contractIdToUpdate || approvedContract?.id;
+    if (!contractId) return;
+
+    setIsTrackingLoading(true);
+    try {
+      const trackingResponse = await getTrackingByContract(contractId);
+      if (trackingResponse && trackingResponse.data) {
+        const trackingData = trackingResponse.data;
+
+        setDriverLocation({
+          lat: trackingData.currentLatitude,
+          lng: trackingData.currentLongitude,
+        });
+
+        setOriginLocation({
+          lat: trackingData.originLatitude,
+          lng: trackingData.originLongitude,
+        });
+
+        const origin = `${trackingData.originLongitude},${trackingData.originLatitude}`;
+        const destination = `${trackingData.destinationLongitude},${trackingData.destinationLatitude}`;
+        fetchRoute(origin, destination);
+      } else {
+        setAlertMessage(
+          "Nenhuma localização encontrada para este frete ainda."
+        );
+        setAlertType("info");
+        setIsAlertOpen(true);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar localização:", error);
+      setAlertMessage("Não foi possível obter a localização do motorista.");
+      setAlertType("error");
+      setIsAlertOpen(true);
+    } finally {
+      setIsTrackingLoading(false);
     }
   };
 
@@ -270,29 +344,31 @@ function FreightDetails() {
                 >
                   {freight.status || "Pendente"}
                 </span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() =>
-                      navigate(`/client/freight/edit/${freight.id}`)
-                    }
-                    className="p-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40 transition-colors"
-                    title="Editar frete"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                {freight.status === "AVAILABLE" && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() =>
+                        navigate(`/client/freight/${freight.id}/edit`)
+                      }
+                      className="p-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40 transition-all duration-200 ease-in-out hover:scale-105 cursor-pointer"
+                      title="Editar frete"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                  </button>
-                </div>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -404,7 +480,7 @@ function FreightDetails() {
           <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
             <button
               onClick={() => navigate("/client/freights")}
-              className={`px-6 py-2 rounded-lg border transition-colors cursor-pointer ${
+              className={`px-6 py-2 rounded-lg border transition-all duration-200 ease-in-out hover:scale-105 cursor-pointer ${
                 darkMode
                   ? "border-gray-600 text-gray-300 hover:bg-gray-700"
                   : "border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -412,24 +488,30 @@ function FreightDetails() {
             >
               Voltar para Lista
             </button>
-            <button
-              onClick={() => navigate(`/client/freight/${freight.id}/edit`)}
-              disabled={isLocked}
-              className={`px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer ${
-                isLocked ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-            >
-              Editar Frete
-            </button>
-            <button
-              onClick={handleDeleteFreight}
-              disabled={isDeleting || isLocked}
-              className={`px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-400 transition-colors cursor-pointer ${
-                isDeleting || isLocked ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-            >
-              {isDeleting ? "Removendo..." : "Remover Frete"}
-            </button>
+            {freight.status === "AVAILABLE" && (
+              <>
+                <button
+                  onClick={() => navigate(`/client/freight/${id}/edit`)}
+                  disabled={isLocked}
+                  className={`px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 ease-in-out hover:scale-105 cursor-pointer ${
+                    isLocked ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  Editar Frete
+                </button>
+                <button
+                  onClick={handleDeleteFreight}
+                  disabled={isDeleting || isLocked}
+                  className={`px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-400 transition-all duration-200 ease-in-out hover:scale-105 cursor-pointer ${
+                    isDeleting || isLocked
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  }`}
+                >
+                  {isDeleting ? "Removendo..." : "Remover Frete"}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -452,6 +534,46 @@ function FreightDetails() {
       />
 
       <Loading isOpen={loading || isDeleting} />
+
+      {isLocked && approvedContract && (
+        <div
+          className={`mt-8 rounded-2xl border backdrop-blur-sm ${
+            darkMode
+              ? "bg-gray-800/80 border-gray-700"
+              : "bg-white/80 border-gray-200 shadow-lg"
+          }`}
+        >
+          <div className="p-6">
+            <h3 className="text-xl font-bold mb-4">
+              Acompanhamento da Entrega
+            </h3>
+            <div className="w-full h-80 mb-4 rounded-lg shadow-md overflow-hidden bg-gray-200">
+              <Map
+                center={
+                  driverLocation ||
+                  originLocation || { lat: -23.55052, lng: -46.633308 }
+                }
+                zoom={driverLocation ? 15 : 12}
+                route={route}
+                markers={
+                  driverLocation
+                    ? [{ ...driverLocation, title: "Posição do Motorista" }]
+                    : []
+                }
+              />
+            </div>
+            <button
+              onClick={() => handleUpdateLocation()}
+              disabled={isTrackingLoading}
+              className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-500 transition-all duration-200 ease-in-out hover:scale-105 cursor-pointer flex items-center justify-center gap-2 font-semibold"
+            >
+              {isTrackingLoading
+                ? "Atualizando..."
+                : "Atualizar Localização do Motorista"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

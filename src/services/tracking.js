@@ -30,16 +30,6 @@ export const getTrackingById = async (id) => {
   }
 };
 
-// PUT /api/tracking/{id}
-export const updateTracking = async (id, data) => {
-  try {
-    const response = await api.put(`/api/tracking/${id}`, data);
-    return response;
-  } catch (err) {
-    return err.response;
-  }
-};
-
 // DELETE /api/tracking/{id}
 export const deleteTracking = async (id) => {
   try {
@@ -50,18 +40,8 @@ export const deleteTracking = async (id) => {
   }
 };
 
-// GET /api/tracking/freight/{freightId}
-export const getTrackingsByFreight = async (freightId) => {
-  try {
-    const response = await api.get(`/api/tracking/freight/${freightId}`);
-    return response;
-  } catch (err) {
-    return err.response;
-  }
-};
-
 // GET /api/tracking/contract/{contractId}
-export const getTrackingsByContract = async (contractId) => {
+export const getTrackingByContract = async (contractId) => {
   try {
     const response = await api.get(`/api/tracking/contract/${contractId}`);
     return response;
