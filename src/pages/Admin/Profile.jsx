@@ -13,32 +13,41 @@ import {
   Star,
   MessageSquare,
   Edit,
-  Car, // Novos ícones importados
 } from "lucide-react";
 import EditProfile from "../../components/ui/modal/EditProfile";
 
 // Componente para exibir uma linha de informação
-// (Sem alterações)
-const InfoRow = ({ icon: Icon, label, value }) => (
-  <div className="flex items-start space-x-4">
-    <Icon
-      className="h-5 w-5 flex-shrink-0 text-blue-500 mt-1"
-      aria-hidden="true"
-    />
-    <div className="flex-1">
-      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-        {label}
-      </p>
-      <p className="text-base text-gray-800 dark:text-gray-200 break-words">
-        {value || "Não informada"}
-      </p>
+const InfoRow = ({ icon: Icon, label, value }) => {
+  const { darkMode } = useTheme();
+  return (
+    <div className="flex items-start space-x-4">
+      <Icon
+        className="h-5 w-5 flex-shrink-0 text-blue-500 mt-1"
+        aria-hidden="true"
+      />
+      <div className="flex-1">
+        <p
+          className={`text-sm font-medium ${
+            darkMode ? "text-gray-400" : "text-gray-500"
+          }`}
+        >
+          {label}
+        </p>
+        <p
+          className={`text-base break-words ${
+            darkMode ? "text-gray-200" : "text-gray-800"
+          }`}
+        >
+          {value || "Não informada"}
+        </p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Componente para o avatar do usuário
-// (Sem alterações)
 const UserAvatar = ({ name }) => {
+  const { darkMode } = useTheme();
   const initials = name
     ? name
         .split(" ")
@@ -48,29 +57,54 @@ const UserAvatar = ({ name }) => {
         .toUpperCase()
     : "?";
   return (
-    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg border-4 border-white dark:border-gray-800">
+    <div
+      className={`flex h-24 w-24 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg border-4 ${
+        darkMode ? "border-gray-800" : "border-white"
+      }`}
+    >
       <span className="text-3xl font-bold">{initials}</span>
     </div>
   );
 };
 
-// NOVO: Componente para exibir estatísticas em um card
-const StatCard = ({ icon: Icon, value, label }) => (
-  <div className="bg-gray-100 dark:bg-gray-700/60 p-4 rounded-lg flex items-center space-x-3 transition-colors">
-    <div className="flex-shrink-0 bg-blue-100 dark:bg-blue-900/40 p-2 rounded-full">
-      <Icon className="h-6 w-6 text-blue-500" />
+// Componente para exibir estatísticas em um card
+const StatCard = ({ icon: Icon, value, label }) => {
+  const { darkMode } = useTheme();
+  return (
+    <div
+      className={`p-4 rounded-lg flex items-center space-x-3 transition-colors ${
+        darkMode ? "bg-gray-700/60" : "bg-gray-100"
+      }`}
+    >
+      <div
+        className={`flex-shrink-0 p-2 rounded-full ${
+          darkMode ? "bg-blue-900/40" : "bg-blue-100"
+        }`}
+      >
+        <Icon className="h-6 w-6 text-blue-500" />
+      </div>
+      <div>
+        <p
+          className={`text-xl font-bold ${
+            darkMode ? "text-white" : "text-gray-900"
+          }`}
+        >
+          {value}
+        </p>
+        <p
+          className={`text-xs font-medium ${
+            darkMode ? "text-gray-400" : "text-gray-500"
+          }`}
+        >
+          {label}
+        </p>
+      </div>
     </div>
-    <div>
-      <p className="text-xl font-bold text-gray-900 dark:text-white">{value}</p>
-      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-        {label}
-      </p>
-    </div>
-  </div>
-);
+  );
+};
 
-// --- Componente Principal do Perfil do Cliente (Refatorado) ---
-function ClientProfile() {
+// --- Componente Principal do Perfil do Administrador ---
+function AdminProfile() {
   const { darkMode, toggleTheme } = useTheme();
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -78,9 +112,8 @@ function ClientProfile() {
   const { user, setUser } = useAuth();
   const [isEditModalOpen, setEditModalOpen] = useState(false);
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
-  }, [darkMode]);
+  // O useEffect que adicionava a classe 'dark' ao HTML foi removido,
+  // pois agora os estilos são aplicados diretamente via JS.
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -91,10 +124,7 @@ function ClientProfile() {
       }
       try {
         setLoading(true);
-        // Usando o JSON fornecido diretamente para demonstração
-        // Em um caso real, a chamada da API estaria aqui: await getUserById(user.id);
         const profileData = await getUserById(user.id);
-
         setUserProfile(profileData);
       } catch (err) {
         setError("Falha ao carregar o perfil. Tente novamente mais tarde.");
@@ -115,28 +145,33 @@ function ClientProfile() {
   const LoadingState = () => (
     <div className="text-center p-8">
       <Loader className="h-12 w-12 mx-auto animate-spin text-blue-500" />
-      <p className="mt-4 text-lg font-semibold text-gray-700 dark:text-gray-300">
+      <p
+        className={`mt-4 text-lg font-semibold ${
+          darkMode ? "text-gray-300" : "text-gray-700"
+        }`}
+      >
         Carregando perfil...
       </p>
     </div>
   );
 
   const ErrorState = () => (
-    <div className="flex flex-col items-center justify-center rounded-lg bg-white/80 p-8 text-center text-red-500 shadow-lg backdrop-blur-lg dark:bg-gray-800/80">
+    <div
+      className={`flex flex-col items-center justify-center rounded-lg p-8 text-center text-red-500 shadow-lg backdrop-blur-lg ${
+        darkMode ? "bg-gray-800/80" : "bg-white/80"
+      }`}
+    >
       <AlertTriangle className="h-12 w-12" />
       <p className="mt-4 font-semibold">{error}</p>
     </div>
   );
 
   return (
-    <div className="relative min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4 font-sans transition-colors duration-300">
-      <button
-        onClick={toggleTheme}
-        className="absolute top-6 right-6 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/70 text-gray-600 shadow-md backdrop-blur-sm transition-all hover:bg-white dark:bg-gray-800/70 dark:text-gray-300 dark:hover:bg-gray-700"
-        aria-label="Alternar tema"
-      >
-        {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-      </button>
+    <div
+      className={`relative min-h-screen flex items-center justify-center p-4 font-sans transition-colors duration-300 ${
+        darkMode ? "bg-gray-900" : "bg-gray-50"
+      }`}
+    >
 
       <main className="w-full max-w-md z-10">
         {loading ? (
@@ -146,7 +181,11 @@ function ClientProfile() {
         ) : (
           userProfile && (
             <>
-              <div className="relative rounded-xl bg-white dark:bg-gray-800 shadow-xl overflow-hidden transition-colors duration-300">
+              <div
+                className={`relative rounded-xl shadow-xl overflow-hidden transition-colors duration-300 ${
+                  darkMode ? "bg-gray-800" : "bg-white"
+                }`}
+              >
                 <div className="h-28 bg-gradient-to-r from-cyan-500 to-blue-500" />
 
                 <div className="absolute top-28 left-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -155,11 +194,15 @@ function ClientProfile() {
 
                 <div className="p-6">
                   <div className="text-center mt-12">
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    <h1
+                      className={`text-2xl font-bold ${
+                        darkMode ? "text-white" : "text-gray-900"
+                      }`}
+                    >
                       {userProfile.name}
                     </h1>
                     <p className="text-sm font-medium text-blue-500 capitalize">
-                      {userProfile.role.toLowerCase()}
+                      {userProfile.role && userProfile.role.toLowerCase()}
                     </p>
                   </div>
 
@@ -179,10 +222,18 @@ function ClientProfile() {
 
                   {/* Seção de Detalhes Pessoais */}
                   <div className="mt-8">
-                    <h3 className="text-xs font-semibold uppercase text-gray-400 dark:text-gray-500 tracking-wider">
+                    <h3
+                      className={`text-xs font-semibold uppercase tracking-wider ${
+                        darkMode ? "text-gray-500" : "text-gray-400"
+                      }`}
+                    >
                       Detalhes Pessoais
                     </h3>
-                    <div className="mt-4 space-y-5 border-t border-gray-200 dark:border-gray-700 pt-5">
+                    <div
+                      className={`mt-4 space-y-5 border-t pt-5 ${
+                        darkMode ? "border-gray-700" : "border-gray-200"
+                      }`}
+                    >
                       <InfoRow
                         icon={User}
                         label="Nome de Usuário"
@@ -203,7 +254,6 @@ function ClientProfile() {
                         label="CPF/CNPJ"
                         value={userProfile.cpf_cnpj}
                       />
-                      <InfoRow icon={Car} label="CNH" value={userProfile.cnh} />
                     </div>
                   </div>
 
@@ -211,7 +261,11 @@ function ClientProfile() {
                   <div className="mt-8">
                     <button
                       onClick={() => setEditModalOpen(true)}
-                      className="w-full flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                      className={`w-full flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        darkMode
+                          ? "focus:ring-offset-gray-800"
+                          : "focus:ring-offset-white"
+                      }`}
                     >
                       <Edit size={16} className="mr-2" />
                       Editar Perfil
@@ -233,4 +287,4 @@ function ClientProfile() {
   );
 }
 
-export default ClientProfile;
+export default AdminProfile;

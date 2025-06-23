@@ -22,9 +22,12 @@ export const validateToken = async (token) => {
 
 export const resetPassword = async ({ token, password }) => {
   try {
-    const response = await api.post(`/api/recovery/reset`, { token, newPassword: password });
+    const response = await api.post(`/api/recovery/reset`, {
+      token,
+      newPassword: password,
+    });
     return response;
   } catch (error) {
-    return error.response
+    return error.response;
   }
 };
