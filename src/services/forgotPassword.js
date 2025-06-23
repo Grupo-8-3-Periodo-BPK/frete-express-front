@@ -2,21 +2,25 @@ import { api } from "../contexts/AuthContext";
 
 export const forgotPassword = async (email) => {
   try {
+    console.log(email);
     const response = await api.post("/api/recovery/request", {
-      emailOrPhone: email,
+      emailOrPhone: String(email),
     });
+    console.log(response);
     return response.data;
   } catch (error) {
-    return error.response.data;
+    throw error;
   }
 };
 
 export const validateToken = async (token) => {
   try {
-    const response = await api.post(`/api/recovery/validate`, { token });
+    const response = await api.post(`/api/recovery/validate`, {
+      token: token,
+    });
     return response;
   } catch (error) {
-    return error.response;
+    throw error;
   }
 };
 
@@ -28,6 +32,6 @@ export const resetPassword = async ({ token, password }) => {
     });
     return response;
   } catch (error) {
-    return error.response;
+    throw error;
   }
 };

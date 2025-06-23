@@ -107,6 +107,7 @@ export default function RecoveryPassword({
     initialPasswordValidation
   );
   const [loading, setLoading] = useState(false);
+  const [isTokenValidating, setIsTokenValidating] = useState(false);
   const [alertState, setAlertState] = useState(initialAlertState);
 
   // --- Derivação de Estado ---
@@ -117,7 +118,21 @@ export default function RecoveryPassword({
     passwordValidation.uppercase &&
     passwordValidation.number;
   const isStep2SubmitDisabled =
-    loading || !validToken || !isPasswordValid || !passwordsMatch || !password;
+    loading ||
+    isTokenValidating ||
+    !validToken ||
+    !isPasswordValid ||
+    !passwordsMatch ||
+    !password;
+
+  const tokenInputClasses = [
+    baseInputClasses,
+    debouncedToken
+      ? validToken
+        ? "border-green-500 focus:border-green-500 focus:ring-green-500"
+        : "border-red-500 focus:border-red-500 focus:ring-red-500"
+      : "",
+  ].join(" ");
 
   // --- Funções Auxiliares ---
   const showAlert = useCallback((config) => {
@@ -189,14 +204,14 @@ export default function RecoveryPassword({
         setValidToken(false);
         return;
       }
-      setLoading(true);
+      setIsTokenValidating(true);
       try {
         await validateToken(debouncedToken);
         setValidToken(true);
       } catch (error) {
         setValidToken(false);
       } finally {
-        setLoading(false);
+        setIsTokenValidating(false);
       }
     };
     validate();
@@ -318,9 +333,41 @@ export default function RecoveryPassword({
                         onChange={(e) => setToken(e.target.value)}
                         required
                         placeholder="Insira o código"
-                        baseInputClasses={baseInputClasses}
+                        baseInputClasses={tokenInputClasses}
                         darkMode={darkMode}
                       />
+                      {debouncedToken && !isTokenValidating && (
+                        <div className="flex items-center text-sm -mt-2 mb-4 ml-1">
+                          {validToken ? (
+                            <p
+                              className={`flex items-center ${
+                                darkMode ? "text-green-400" : "text-green-600"
+                              }`}
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" /> Código
+                              válido.
+                            </p>
+                          ) : (
+                            <p
+                              className={`flex items-center ${
+                                darkMode ? "text-red-400" : "text-red-500"
+                              }`}
+                            >
+                              <XCircle className="mr-2 h-4 w-4" /> Código
+                              inválido ou expirado.
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      {isTokenValidating && (
+                        <p
+                          className={`text-sm -mt-2 mb-4 ml-1 ${
+                            darkMode ? "text-gray-400" : "text-gray-500"
+                          }`}
+                        >
+                          Verificando código...
+                        </p>
+                      )}
                       <FormInput
                         id="password"
                         label="Nova Senha"
