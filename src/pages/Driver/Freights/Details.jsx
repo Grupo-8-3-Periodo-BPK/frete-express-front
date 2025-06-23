@@ -1,11 +1,18 @@
 // src/components/FreightDetailView.jsx
 import React, { useState, useEffect } from "react";
-import { MapPin, Package, AlertCircle } from "lucide-react";
+import {
+  MapPin,
+  Package,
+  AlertCircle,
+  Send,
+  FileText,
+  CheckCircle,
+} from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { BackButton } from "../../../components/ui/button/Back.jsx";
 import { getFreightById } from "../../../services/freight.js";
 // NOVO: Importamos o useTheme aqui
-import { useTheme } from "../../../contexts/AuthContext";
+import { useAuth, useTheme } from "../../../contexts/AuthContext.jsx";
 import {
   getCoordinatesForAddress,
   getRouteDirections,
@@ -13,6 +20,11 @@ import {
 import { getStateFullName } from "../../../utils/stateUtils";
 // O import do mapa continua o mesmo
 import Map from "../../../components/ui/Map.jsx";
+import {
+  createContract,
+  getContractsByDriver,
+} from "../../../services/contract.js";
+import { getVehiclesByUser } from "../../../services/vehicle.js";
 
 // ... (as funções formatCurrency, formatDate, formatWeight não mudam) ...
 const formatCurrency = (value) =>
@@ -35,8 +47,11 @@ function DriverFreightDetails() {
   const [freight, setFreight] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isApplying, setIsApplying] = useState(false);
+  const [isApplied, setIsApplied] = useState(false);
   // NOVO: Obtemos o estado do darkMode
   const { darkMode } = useTheme();
+  const { user } = useAuth();
 
   // ESTADOS DO MAPA MELHORADOS
   const [route, setRoute] = useState([]);
@@ -45,10 +60,23 @@ function DriverFreightDetails() {
 
   useEffect(() => {
     const fetchFreightDetails = async () => {
+      if (!user?.id || !id) return;
+
       try {
         setLoading(true);
-        const data = await getFreightById(id);
+
+        const [data, driverContracts] = await Promise.all([
+          getFreightById(id),
+          getContractsByDriver(user.id),
+        ]);
+
         setFreight(data);
+
+        // Verifica se já existe uma candidatura para este frete
+        const hasApplied = driverContracts.some(
+          (contract) => contract.freightId === data.id
+        );
+        setIsApplied(hasApplied);
 
         if (data && data.origin_city && data.destination_city) {
           const originState = getStateFullName(data.origin_state);
@@ -110,10 +138,57 @@ function DriverFreightDetails() {
       }
     };
 
-    if (id) {
-      fetchFreightDetails();
+    fetchFreightDetails();
+  }, [id, user]);
+
+  const handleApply = async () => {
+    if (!user || !freight) return;
+
+    try {
+      setIsApplying(true);
+      const vehicles = await getVehiclesByUser(user.id);
+      if (!vehicles || vehicles.length === 0) {
+        alert("Você precisa cadastrar um veículo antes de se candidatar.");
+        return;
+      }
+      const vehicleId = vehicles[0].id;
+
+      const contractData = {
+        client_id: freight.userId,
+        driver_id: user.id,
+        freight_id: freight.id,
+        vehicle_id: vehicleId,
+        pickup_date: freight.initial_date,
+        delivery_date: freight.final_date,
+        agreed_value: freight.price,
+      };
+
+      await createContract(contractData);
+      alert("Você se candidatou ao frete com sucesso!");
+      setIsApplied(true);
+    } catch (err) {
+      alert(err.message || "Erro ao se candidatar ao frete.");
+    } finally {
+      setIsApplying(false);
     }
-  }, [id]);
+  };
+
+  const handleWhatsAppQuote = () => {
+    if (!freight || !freight.clientPhoneNumber) {
+      alert("Número de telefone do cliente não disponível.");
+      return;
+    }
+    // Limpa o número, mantendo apenas dígitos
+    const phone = freight.clientPhoneNumber.replace(/\D/g, "");
+
+    // Mensagem padrão para o WhatsApp
+    const defaultMessage = `Olá! Vi o anúncio de frete de ${freight.origin_city} para ${freight.destination_city} no FretesExpress e gostaria de fazer um orçamento.`;
+    const encodedMessage = encodeURIComponent(defaultMessage);
+
+    // Assume DDI 55 (Brasil) se não estiver presente e adiciona a mensagem
+    const whatsappUrl = `https://wa.me/5545998474515?text=${encodedMessage}`;
+    window.open(whatsappUrl, "_blank");
+  };
 
   // ... (o restante do seu componente: if loading, if error, etc., permanece IGUAL) ...
   if (loading) {
@@ -271,6 +346,37 @@ function DriverFreightDetails() {
                   <p className="text-2xl font-bold text-green-500">
                     {formatCurrency(freight.price)}
                   </p>
+                </div>
+                <div className="mt-6 flex flex-col sm:flex-row gap-4">
+                  <button
+                    onClick={handleApply}
+                    disabled={isApplying || isApplied}
+                    className={`flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white transition-colors duration-200 ${
+                      isApplied
+                        ? "bg-green-600 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    } ${isApplying ? "cursor-wait" : ""}`}
+                  >
+                    {isApplied ? (
+                      <>
+                        <CheckCircle className="mr-2 h-5 w-5" />
+                        Candidatura Enviada
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="mr-2 h-5 w-5" />
+                        {isApplying ? "Enviando..." : "Candidatar-se"}
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleWhatsAppQuote}
+                    disabled={!freight?.clientPhoneNumber}
+                    className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400"
+                  >
+                    <Send className="mr-2 h-5 w-5" />
+                    Fazer Orçamento
+                  </button>
                 </div>
               </div>
             </div>

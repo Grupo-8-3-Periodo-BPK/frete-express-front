@@ -142,12 +142,33 @@ const DriverFreights = () => {
           REJECTED: "Proposta Rejeitada",
         }[status] || "Ver Contrato";
 
-      const statusColor = status === "REJECTED" ? "bg-red-600" : "bg-gray-500";
+      const isRejected = status === "REJECTED";
+      const isPending = status === "PENDING_CLIENT_APPROVAL";
+      const isClickable = !isRejected && !isPending;
+
+      let buttonClass = "";
+      if (isRejected) {
+        buttonClass = darkMode
+          ? "bg-red-600 text-white"
+          : "bg-red-100 text-red-700";
+      } else if (isPending) {
+        buttonClass = darkMode
+          ? "bg-gray-700 text-gray-300"
+          : "bg-gray-200 text-gray-500";
+      } else {
+        // Ver Contrato
+        buttonClass = darkMode
+          ? "bg-gray-600 hover:bg-gray-500 text-white"
+          : "bg-gray-600 hover:bg-gray-700 text-white";
+      }
 
       return (
         <button
-          onClick={() => {if(statusText === "Candidatura Enviada") return; navigate("/driver/contracts")}}
-          className={`w-full ${statusColor} cursor-pointer hover:opacity-90 text-white font-bold py-2 px-4 rounded-lg transition-colors`}
+          onClick={() => {
+            if (isClickable) navigate("/driver/contracts");
+          }}
+          disabled={!isClickable}
+          className={`w-full ${buttonClass} font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-70 disabled:cursor-not-allowed`}
         >
           {statusText}
         </button>
@@ -346,35 +367,45 @@ const DriverFreights = () => {
                     </div>
                   </div>
                 </div>
-                <div className="p-6 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 rounded-b-lg flex flex-col gap-4">
-                  <div className="text-center">
+                <div
+                  className={`mt-auto p-5 rounded-b-lg ${
+                    darkMode ? "bg-gray-800/80" : "bg-gray-100"
+                  }`}
+                >
+                  <div className="flex justify-between items-center mb-4">
                     <span
-                      className={`block text-2xl font-bold ${
-                        darkMode ? "text-green-400" : "text-green-600"
-                      }`}
-                    >
-                      {formatCurrency(freight.price)}
-                    </span>
-                    <span
-                      className={`text-xs ${
+                      className={`text-sm ${
                         darkMode ? "text-gray-400" : "text-gray-500"
                       }`}
                     >
                       Valor estimado
                     </span>
+                    <span
+                      className={`text-2xl font-bold ${
+                        darkMode ? "text-green-400" : "text-green-600"
+                      }`}
+                    >
+                      {formatCurrency(freight.price)}
+                    </span>
                   </div>
-                  <div className="flex gap-2">
-                    {renderApplicationButton(freight)}
+                  <div className="flex items-center gap-2">
+                    <div className="flex-grow">
+                      {renderApplicationButton(freight)}
+                    </div>
                     <button
                       onClick={() => navigate(`/driver/freights/${freight.id}`)}
-                      className={`w-full flex cursor-pointer items-center justify-center p-2 rounded-lg transition-colors ${
+                      className={`p-2 rounded-lg transition-colors ${
                         darkMode
                           ? "bg-gray-700 hover:bg-gray-600"
-                          : "bg-gray-200 hover:bg-gray-300"
+                          : "bg-white hover:bg-gray-200"
                       }`}
-                      title="Ver detalhes"
+                      title="Ver detalhes do frete"
                     >
-                      <Eye className="w-5 h-5" />
+                      <Eye
+                        className={`w-5 h-5 ${
+                          darkMode ? "text-gray-300" : "text-gray-600"
+                        }`}
+                      />
                     </button>
                   </div>
                 </div>

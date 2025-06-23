@@ -76,6 +76,15 @@ export const registerDriver = async (userData) => {
   }
 };
 
+export const registerUserByAdmin = async (userData) => {
+  try {
+    const response = await api.post("/api/admin/register", userData);
+    return response;
+  } catch (error) {
+    return error.response || error;
+  }
+};
+
 export const updateUser = async (id, userData) => {
   try {
     const response = await api.put(`/api/users/${id}`, userData);

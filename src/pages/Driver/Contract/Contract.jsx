@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth, useTheme } from "../../../contexts/AuthContext";
+import { useAuth } from "../../../contexts/AuthContext";
 import {
   getContractsByDriver,
   cancelByDriver,
@@ -11,11 +11,11 @@ import {
 
 import ContractCard from "../../../components/ui/card/Contract";
 import Alert from "../../../components/ui/modal/Alert";
+import ConfirmationModal from "../../../components/ui/modal/Confirmation";
 import { Truck, AlertCircle, Loader } from "lucide-react";
 
 function DriverContractsPage() {
   const { user } = useAuth();
-  const { darkMode } = useTheme();
   const navigate = useNavigate();
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +25,9 @@ function DriverContractsPage() {
     message: "",
     type: "success",
   });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedContractId, setSelectedContractId] = useState(null);
+  const [modalAction, setModalAction] = useState(null); // 'delete' or 'cancel'
 
   // Transforma a busca de dados em uma função reutilizável
   const fetchContracts = useCallback(async () => {
@@ -49,24 +52,10 @@ function DriverContractsPage() {
   }, [fetchContracts]);
 
   // --- Handlers para as ações do Motorista ---
-  const handleCancel = async (contractId) => {
-    if (window.confirm("Tem certeza que deseja cancelar este contrato?")) {
-      try {
-        await cancelByDriver(contractId);
-        setAlert({
-          isAlertOpen: true,
-          message: "Contrato cancelado.",
-          type: "success",
-        });
-        fetchContracts();
-      } catch (err) {
-        setAlert({
-          isAlertOpen: true,
-          message: "Erro ao cancelar o contrato.",
-          type: "error",
-        });
-      }
-    }
+  const handleCancelClick = (contractId) => {
+    setSelectedContractId(contractId);
+    setModalAction("cancel");
+    setIsModalOpen(true);
   };
 
   const handleComplete = async (contractId) => {
@@ -107,24 +96,46 @@ function DriverContractsPage() {
     }
   };
 
-  const handleDelete = async (contractId) => {
-    if (window.confirm("Tem certeza que deseja retirar sua proposta?")) {
-      try {
-        // A "retirada" é uma exclusão do pré-contrato
-        await deleteContract(contractId);
+  const handleDeleteClick = (contractId) => {
+    setSelectedContractId(contractId);
+    setModalAction("delete");
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmAction = async () => {
+    if (!selectedContractId || !modalAction) return;
+
+    try {
+      if (modalAction === "delete") {
+        await deleteContract(selectedContractId);
         setAlert({
           isAlertOpen: true,
-          message: "Proposta retirada.",
+          message: "Proposta retirada com sucesso.",
           type: "success",
         });
-        fetchContracts();
-      } catch (err) {
+      } else if (modalAction === "cancel") {
+        await cancelByDriver(selectedContractId);
         setAlert({
           isAlertOpen: true,
-          message: "Erro ao retirar a proposta.",
-          type: "error",
+          message: "Contrato cancelado com sucesso.",
+          type: "success",
         });
       }
+      fetchContracts();
+    } catch (err) {
+      const message =
+        modalAction === "delete"
+          ? "Erro ao retirar a proposta."
+          : "Erro ao cancelar o contrato.";
+      setAlert({
+        isAlertOpen: true,
+        message: err.message || message,
+        type: "error",
+      });
+    } finally {
+      setIsModalOpen(false);
+      setSelectedContractId(null);
+      setModalAction(null);
     }
   };
 
@@ -142,23 +153,23 @@ function DriverContractsPage() {
     </div>
   );
   const EmptyState = () => (
-    <div className="text-center py-16 px-6 rounded-lg bg-white dark:bg-gray-800/50 border-dashed border-gray-300 dark:border-gray-700">
+    <div className="text-center py-16 px-6 rounded-lg bg-white border-dashed border-gray-300">
       <Truck className="mx-auto h-16 w-16 text-gray-400" />
       <h2 className="mt-6 text-xl font-semibold">Nenhuma proposta de frete</h2>
-      <p className="mt-2 text-gray-500 dark:text-gray-400">
+      <p className="mt-2 text-gray-500">
         Novas oportunidades e contratos aceitos serão listados aqui.
       </p>
     </div>
   );
 
   return (
-    <div className="w-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
-      <header className="bg-white dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700/50 shadow-sm">
+    <div className="w-full bg-gray-50 text-gray-800 min-h-screen">
+      <header className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-5xl mx-auto py-6 px-4 sm:px-6">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
             Seus Fretes
           </h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-gray-500">
             Gerencie suas propostas e contratos ativos.
           </p>
         </div>
@@ -178,11 +189,10 @@ function DriverContractsPage() {
               >
                 <ContractCard
                   contract={contract}
-                  darkMode={darkMode}
                   userRole="DRIVER"
-                  onCancel={handleCancel}
+                  onCancel={handleCancelClick}
                   onComplete={handleComplete}
-                  onDelete={handleDelete}
+                  onDelete={handleDeleteClick}
                   onStart={handleStart}
                 />
               </div>
@@ -198,6 +208,24 @@ function DriverContractsPage() {
         setIsAlertOpen={setAlert}
         message={alert.message}
         type={alert.type}
+      />
+
+      <ConfirmationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleConfirmAction}
+        title={
+          modalAction === "cancel" ? "Cancelar Contrato" : "Retirar Proposta"
+        }
+        message={
+          modalAction === "cancel"
+            ? "Tem certeza que deseja cancelar este contrato? A outra parte será notificada."
+            : "Você tem certeza que deseja retirar sua proposta para este frete? Esta ação não poderá ser desfeita."
+        }
+        confirmText={
+          modalAction === "cancel" ? "Sim, Cancelar" : "Sim, Retirar"
+        }
+        type={modalAction === "cancel" ? "warning" : "info"}
       />
     </div>
   );
