@@ -52,29 +52,27 @@ function Freights() {
 
   if (loading) {
     return (
-      <div
-        className={`min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}
-      >
+      <div className={`min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="space-y-6">
             {/* Header Skeleton */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-8 h-8 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
-                <div className="w-24 h-8 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+                <div className={`w-8 h-8 rounded-lg animate-pulse ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`} />
+                <div className={`w-24 h-8 rounded animate-pulse ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`} />
               </div>
-              <div className="w-32 h-10 bg-gray-200 dark:bg-gray-800 rounded-lg animate-pulse" />
+              <div className={`w-32 h-10 rounded-lg animate-pulse ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`} />
             </div>
 
             {/* Filter Skeleton */}
-            <div className="w-full h-16 bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse" />
+            <div className={`w-full h-16 rounded-xl animate-pulse ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`} />
 
             {/* Cards Skeleton */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div
                   key={i}
-                  className="h-48 bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse"
+                  className={`h-48 rounded-xl animate-pulse ${darkMode ? 'bg-gray-800' : 'bg-gray-200'}`}
                 />
               ))}
             </div>
@@ -86,13 +84,9 @@ function Freights() {
 
   if (error) {
     return (
-      <div
-        className={`min-h-screen ${
-          darkMode ? "bg-gray-900" : "bg-gray-50"
-        } flex items-center justify-center`}
-      >
+      <div className={`min-h-screen ${darkMode ? "bg-gray-900" : "bg-gray-50"} flex items-center justify-center`}>
         <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+          <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${darkMode ? 'bg-red-900/20' : 'bg-red-100'}`}>
             <svg
               className="w-8 h-8 text-red-500"
               fill="none"
@@ -107,10 +101,10 @@ function Freights() {
               />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          <h3 className={`text-lg font-medium mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
             Erro ao carregar fretes
           </h3>
-          <p className="text-gray-600 dark:text-gray-400">{error}</p>
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{error}</p>
         </div>
       </div>
     );
@@ -142,8 +136,8 @@ function Freights() {
           <button
             onClick={() => navigate("/client/freight/create")}
             className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-xl transition-all
-              bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5
-              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+             bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5
+             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             <svg
               className="w-4 h-4"
@@ -188,7 +182,7 @@ function Freights() {
               </svg>
               <input
                 type="text"
-                placeholder="Pesquisar por produto ou cliente..."
+                placeholder="Pesquisar por título, origem ou destino..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className={`w-full pl-12 pr-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
@@ -256,7 +250,7 @@ function Freights() {
           </div>
         ) : (
           <div className="text-center py-16">
-            <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+            <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
               <svg
                 className="w-12 h-12 text-gray-400"
                 fill="none"

@@ -39,7 +39,7 @@ function FreightDetails() {
 
       if (freightResponse.status === "AVAILABLE") {
         setCandidates(contractsResponse);
-      } else if (freightResponse.status === "CLOSED") {
+      } else {
         const activeContract = contractsResponse.find(
           (c) =>
             c.status === "ACTIVE" ||
@@ -107,15 +107,25 @@ function FreightDetails() {
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "pendente":
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400";
+        return `bg-yellow-100 text-yellow-800 ${
+          darkMode ? "bg-yellow-900/20" : "bg-yellow-900/20"
+        } text-yellow-400`;
       case "em_andamento":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400";
+        return `bg-blue-100 text-blue-800 ${
+          darkMode ? "bg-blue-900/20" : "bg-blue-900/20"
+        } text-blue-400`;
       case "concluido":
-        return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400";
+        return `bg-green-100 text-green-800 ${
+          darkMode ? "bg-green-900/20" : "bg-green-900/20"
+        } text-green-400`;
       case "cancelado":
-        return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400";
+        return `bg-red-100 text-red-800 ${
+          darkMode ? "bg-red-900/20" : "bg-red-900/20"
+        } text-red-400`;
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400";
+        return `bg-gray-100 text-gray-800 ${
+          darkMode ? "bg-gray-900/20" : "bg-gray-900/20"
+        } text-gray-400`;
     }
   };
 
@@ -204,10 +214,20 @@ function FreightDetails() {
               />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          <h3
+            className={`text-lg font-medium ${
+              darkMode ? "text-white" : "text-gray-900"
+            } mb-2`}
+          >
             Erro ao carregar frete
           </h3>
-          <p className="text-gray-600 dark:text-gray-400">{error}</p>
+          <p
+            className={`text-gray-600 ${
+              darkMode ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
+            {error}
+          </p>
           <button
             onClick={() => navigate("/client/freights")}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -258,7 +278,11 @@ function FreightDetails() {
           }`}
         >
           {/* Header do Card */}
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div
+            className={`p-6 border-b ${
+              darkMode ? "border-gray-700" : "border-gray-200"
+            }`}
+          >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h2
@@ -290,7 +314,11 @@ function FreightDetails() {
                       onClick={() =>
                         navigate(`/client/freight/${freight.id}/edit`)
                       }
-                      className="p-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40 transition-all duration-200 ease-in-out hover:scale-105 cursor-pointer"
+                      className={`p-2 rounded-lg bg-blue-100 text-blue-600 hover:bg-blue-200 ${
+                        darkMode
+                          ? "bg-blue-900/20 text-blue-400 hover:bg-blue-900/40"
+                          : "bg-blue-200 text-blue-600 hover:bg-blue-300"
+                      } transition-all duration-200 ease-in-out hover:scale-105 cursor-pointer`}
                       title="Editar frete"
                     >
                       <svg
@@ -318,58 +346,114 @@ function FreightDetails() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
               {/* Detalhes do Frete */}
               <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <p
+                  className={`text-sm font-medium ${
+                    darkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   Origem
                 </p>
-                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                <p
+                  className={`font-semibold ${
+                    darkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
                   {freight.origin_city}, {freight.origin_state}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <p
+                  className={`text-sm font-medium ${
+                    darkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   Destino
                 </p>
-                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                <p
+                  className={`font-semibold ${
+                    darkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
                   {freight.destination_city}, {freight.destination_state}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <p
+                  className={`text-sm font-medium ${
+                    darkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   Data de Coleta
                 </p>
-                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                <p
+                  className={`font-semibold ${
+                    darkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
                   {formatDate(freight.initial_date)}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <p
+                  className={`text-sm font-medium ${
+                    darkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   Data de Entrega
                 </p>
-                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                <p
+                  className={`font-semibold ${
+                    darkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
                   {formatDate(freight.final_date)}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <p
+                  className={`text-sm font-medium ${
+                    darkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   Valor
                 </p>
-                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                <p
+                  className={`font-semibold ${
+                    darkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
                   {formatCurrency(freight.price)}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <p
+                  className={`text-sm font-medium ${
+                    darkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   Peso
                 </p>
-                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                <p
+                  className={`font-semibold ${
+                    darkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
                   {formatWeight(freight.weight)}
                 </p>
               </div>
               <div className="space-y-1 col-span-1 md:col-span-2">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                <p
+                  className={`text-sm font-medium ${
+                    darkMode ? "text-gray-400" : "text-gray-500"
+                  }`}
+                >
                   Dimensões (Altura x Largura x Comprimento)
                 </p>
-                <p className="font-semibold text-gray-800 dark:text-gray-200">
+                <p
+                  className={`font-semibold ${
+                    darkMode ? "text-gray-200" : "text-gray-800"
+                  }`}
+                >
                   {formatDimensions(
                     freight.height,
                     freight.width,
@@ -381,39 +465,54 @@ function FreightDetails() {
           </div>
         </div>
 
-        {/* Seção de Candidaturas */}
-        {freight.status === "AVAILABLE" && candidates.length > 0 && (
+        {/* Seção de Candidaturas ou Contrato Aprovado */}
+        {freight.status === "AVAILABLE" ? (
+          candidates.length > 0 ? (
+            <div className="mt-8">
+              <h2
+                className={`text-2xl font-bold mb-4 ${
+                  darkMode ? "text-white" : "text-gray-900"
+                }`}
+              >
+                Propostas de Motoristas
+              </h2>
+              <div className="grid grid-cols-1 gap-6">
+                {candidates.map((candidate) => (
+                  <ContractCard
+                    key={candidate.id}
+                    contract={candidate}
+                    darkMode={darkMode}
+                    userRole={user.role}
+                    onApprove={handleApproveContract}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            !loading && (
+              <div className="mt-8 text-center py-8 px-4 border-2 border-dashed rounded-lg">
+                <p className="text-gray-500 dark:text-gray-400">
+                  Nenhum motorista se candidatou a este frete ainda.
+                </p>
+              </div>
+            )
+          )
+        ) : approvedContract ? (
           <div className="mt-8">
             <h2
               className={`text-2xl font-bold mb-4 ${
                 darkMode ? "text-white" : "text-gray-900"
               }`}
             >
-              Propostas de Motoristas
+              Proposta Aprovada
             </h2>
-            <div className="grid grid-cols-1 gap-6">
-              {candidates.map((candidate) => (
-                <ContractCard
-                  key={candidate.id}
-                  contract={candidate}
-                  darkMode={darkMode}
-                  userRole={user.role}
-                  onApprove={handleApproveContract}
-                />
-              ))}
-            </div>
+            <ContractCard
+              contract={approvedContract}
+              darkMode={darkMode}
+              userRole={user.role}
+            />
           </div>
-        )}
-
-        {freight.status === "AVAILABLE" &&
-          candidates.length === 0 &&
-          !loading && (
-            <div className="mt-8 text-center py-8 px-4 border-2 border-dashed rounded-lg">
-              <p className="text-gray-500 dark:text-gray-400">
-                Nenhum motorista se candidatou a este frete ainda.
-              </p>
-            </div>
-          )}
+        ) : null}
 
         {/* Footer do Card */}
         <div className="p-6 border-t border-gray-200 dark:border-gray-700">

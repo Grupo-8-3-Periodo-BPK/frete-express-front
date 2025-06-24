@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from "react";
 import {
   Search,
-  Filter,
   MapPin,
   Calendar,
   Truck,
-  Clock,
-  CheckCircle,
   Eye,
   AlertCircle,
   Send,
@@ -95,7 +92,6 @@ const DriverFreights = () => {
     try {
       await createContract(contractData);
       showAlert("Candidatura enviada com sucesso!", "success");
-      // Atualiza os contratos para refletir a nova candidatura
       const updatedContracts = await getContractsByDriver(user.user_id);
       setContracts(updatedContracts || []);
     } catch (error) {
@@ -156,7 +152,6 @@ const DriverFreights = () => {
           ? "bg-gray-700 text-gray-300"
           : "bg-gray-200 text-gray-500";
       } else {
-        // Ver Contrato
         buttonClass = darkMode
           ? "bg-gray-600 hover:bg-gray-500 text-white"
           : "bg-gray-600 hover:bg-gray-700 text-white";
@@ -195,25 +190,27 @@ const DriverFreights = () => {
   };
 
   const formatDate = (dateString) => {
-    // Adiciona um fuso horário para evitar problemas de data off-by-one
     return new Date(dateString + "T00:00:00").toLocaleDateString("pt-BR");
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white p-6 flex justify-center items-center">
-        <p>Carregando fretes...</p>
+      <div className={`min-h-screen p-6 flex justify-center items-center transition-colors duration-300 ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-800"}`}>
+        <div className="flex flex-col items-center gap-4">
+            <Loader className="w-10 h-10 animate-spin text-blue-500" />
+            <p className="text-lg">Carregando fretes...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white p-6 flex justify-center items-center">
+      <div className={`min-h-screen p-6 flex justify-center items-center transition-colors duration-300 ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-800"}`}>
         <div className="text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-red-400" />
-          <h3 className="mt-4 text-lg font-medium">Erro ao carregar</h3>
-          <p className="mt-2 text-sm text-gray-400">{error}</p>
+          <AlertCircle className={`mx-auto h-12 w-12 ${darkMode ? 'text-red-400' : 'text-red-500'}`} />
+          <h3 className={`mt-4 text-lg font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>Erro ao carregar</h3>
+          <p className={`mt-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{error}</p>
         </div>
       </div>
     );
@@ -353,7 +350,7 @@ const DriverFreights = () => {
                     </span>
                   </p>
 
-                  <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
+                  <div className={`border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} pt-4 space-y-3`}>
                     <div className="flex items-center text-sm">
                       <Calendar className="w-4 h-4 mr-3 text-gray-400" />
                       <span>
@@ -388,13 +385,13 @@ const DriverFreights = () => {
                       {formatCurrency(freight.price)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-grow">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex w-1/2">
                       {renderApplicationButton(freight)}
                     </div>
                     <button
                       onClick={() => navigate(`/driver/freights/${freight.id}`)}
-                      className={`p-2 rounded-lg transition-colors ${
+                      className={`p-2 rounded-lg transition-colors w-1/2  flex items-center justify-center ${
                         darkMode
                           ? "bg-gray-700 hover:bg-gray-600"
                           : "bg-white hover:bg-gray-200"

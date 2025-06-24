@@ -25,6 +25,7 @@ import {
   getContractsByDriver,
 } from "../../../services/contract.js";
 import { getVehiclesByUser } from "../../../services/vehicle.js";
+import Alert from "../../../components/ui/modal/Alert.jsx";
 
 // ... (as funções formatCurrency, formatDate, formatWeight não mudam) ...
 const formatCurrency = (value) =>
@@ -49,6 +50,13 @@ function DriverFreightDetails() {
   const [error, setError] = useState(null);
   const [isApplying, setIsApplying] = useState(false);
   const [isApplied, setIsApplied] = useState(false);
+  const [alertInfo, setAlertInfo] = useState({
+    isOpen: false,
+    message: "",
+    type: "info",
+    onClose: null,
+    navigateTo: null,
+  });
   // NOVO: Obtemos o estado do darkMode
   const { darkMode } = useTheme();
   const { user } = useAuth();
@@ -148,7 +156,13 @@ function DriverFreightDetails() {
       setIsApplying(true);
       const vehicles = await getVehiclesByUser(user.id);
       if (!vehicles || vehicles.length === 0) {
-        alert("Você precisa cadastrar um veículo antes de se candidatar.");
+        setAlertInfo({
+          isOpen: true,
+          message:
+            "Você precisa cadastrar um veículo antes de se candidatar. Você será redirecionado.",
+          type: "info",
+          navigateTo: "/driver/vehicles",
+        });
         return;
       }
       const vehicleId = vehicles[0].id;
@@ -164,10 +178,18 @@ function DriverFreightDetails() {
       };
 
       await createContract(contractData);
-      alert("Você se candidatou ao frete com sucesso!");
-      setIsApplied(true);
+      setAlertInfo({
+        isOpen: true,
+        message: "Você se candidatou ao frete com sucesso!",
+        type: "success",
+        onClose: () => setIsApplied(true),
+      });
     } catch (err) {
-      alert(err.message || "Erro ao se candidatar ao frete.");
+      setAlertInfo({
+        isOpen: true,
+        message: err.message || "Erro ao se candidatar ao frete.",
+        type: "error",
+      });
     } finally {
       setIsApplying(false);
     }
@@ -175,22 +197,23 @@ function DriverFreightDetails() {
 
   const handleWhatsAppQuote = () => {
     if (!freight || !freight.clientPhoneNumber) {
-      alert("Número de telefone do cliente não disponível.");
+      setAlertInfo({
+        isOpen: true,
+        message: "Número de telefone do cliente não disponível.",
+        type: "info",
+      });
       return;
     }
-    // Limpa o número, mantendo apenas dígitos
     const phone = freight.clientPhoneNumber.replace(/\D/g, "");
 
-    // Mensagem padrão para o WhatsApp
     const defaultMessage = `Olá! Vi o anúncio de frete de ${freight.origin_city} para ${freight.destination_city} no FretesExpress e gostaria de fazer um orçamento.`;
     const encodedMessage = encodeURIComponent(defaultMessage);
 
-    // Assume DDI 55 (Brasil) se não estiver presente e adiciona a mensagem
+    // Estático para melhor demonstração
     const whatsappUrl = `https://wa.me/5545998474515?text=${encodedMessage}`;
     window.open(whatsappUrl, "_blank");
   };
 
-  // ... (o restante do seu componente: if loading, if error, etc., permanece IGUAL) ...
   if (loading) {
     return (
       <div
@@ -247,8 +270,22 @@ function DriverFreightDetails() {
         darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-800"
       } py-8 px-4`}
     >
+      <Alert
+        isAlertOpen={alertInfo.isOpen}
+        setIsAlertOpen={(isOpen) =>
+          setAlertInfo({
+            ...alertInfo,
+            isOpen,
+            onClose: null,
+            navigateTo: null,
+          })
+        }
+        message={alertInfo.message}
+        type={alertInfo.type}
+        onClose={alertInfo.onClose}
+        navigateTo={alertInfo.navigateTo}
+      />
       <div className="max-w-4xl mx-auto">
-        {/* ... (Seu JSX para o cabeçalho e detalhes da carga não muda) ... */}
         <div className="mb-8">
           <BackButton message="Voltar" navigateTo="/driver/freights" />
           <h1

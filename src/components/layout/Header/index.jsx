@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTheme, useAuth } from "../../../contexts/AuthContext";
 import logo from "../../../assets/images/icone-frete-express.png";
 import { Bell, Menu, X, DoorClosed } from "lucide-react";
@@ -10,7 +10,7 @@ export default function Header() {
   const { darkMode } = useTheme();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
+  const navigate = useNavigate();
   // --- LÓGICA SIMPLIFICADA ---
 
   // 1. Listas de links diretas para cada perfil de usuário.
@@ -103,6 +103,16 @@ export default function Header() {
     DRIVER: "/driver/freights",
   }[user?.role] || "/";
 
+  const handleProfileClick = () => {
+    if (user?.role === "CLIENT") {
+      navigate("/client/profile");
+    } else if (user?.role === "DRIVER") {
+      navigate("/driver/profile");
+    } else if (user?.role === "ADMIN") {
+      navigate("/admin/profile");
+    }
+  };
+
   return (
     <>
       <header className={`w-full fixed top-0 left-0 z-30 shadow-sm transition-colors duration-200 ${
@@ -136,7 +146,7 @@ export default function Header() {
               </span>
             </button>
             
-            <button className="cursor-pointer rounded-full bg-blue-100 dark:bg-blue-900 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+            <button className="cursor-pointer rounded-full bg-blue-100 dark:bg-blue-900 w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" onClick={handleProfileClick}>
               <span className="font-semibold text-blue-700 dark:text-blue-300 text-sm">
                 {user?.name?.charAt(0).toUpperCase()}
               </span>

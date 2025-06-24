@@ -9,6 +9,7 @@ import {
 import AddUser from "../../../components/ui/modal/AddUser.jsx";
 import EditUser from "../../../components/ui/modal/EditUser.jsx";
 import Confirmation from "../../../components/ui/modal/Confirmation.jsx";
+import Alert from "../../../components/ui/modal/Alert.jsx";
 import { Edit, Trash2 } from "lucide-react";
 
 const UserPlusIcon = (props) => (
@@ -91,6 +92,14 @@ function Users() {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+  
+  const [alert, setAlert] = useState({ type: "success", message: "" });
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+
+  const showAlert = (message, type = "error") => {
+    setAlert({ message, type });
+    setIsAlertOpen(true);
+  };
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -146,10 +155,11 @@ function Users() {
     if (userToDelete) {
       try {
         await deleteUser(userToDelete);
+        showAlert("Usuário excluído com sucesso!", "success");
         fetchUsers();
       } catch (err) {
-        setError(err.message || "Erro ao excluir usuário");
-        alert("Erro ao excluir usuário.");
+        const errorMessage = err.response?.data?.error || "Ocorreu um erro ao excluir o usuário.";
+        showAlert(errorMessage, "error");
       } finally {
         setIsConfirmDeleteOpen(false);
         setUserToDelete(null);
@@ -478,6 +488,12 @@ function Users() {
         onConfirm={confirmDeleteUser}
         title="Confirmar Exclusão"
         message="Tem certeza que deseja remover este usuário? A ação não pode ser desfeita."
+      />
+      <Alert
+        isAlertOpen={isAlertOpen}
+        setIsAlertOpen={setIsAlertOpen}
+        message={alert.message}
+        type={alert.type}
       />
     </div>
   );

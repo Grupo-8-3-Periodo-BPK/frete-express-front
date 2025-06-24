@@ -15,7 +15,7 @@ import { Loader, AlertCircle } from "lucide-react";
 
 function ContractPage() {
   const { user } = useAuth();
-  const { darkMode } = useTheme();
+  const { darkMode } = useTheme(); // Este booleano controlará tudo
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,10 +26,10 @@ function ContractPage() {
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedContractId, setSelectedContractId] = useState(null);
-  const [modalAction, setModalAction] = useState(null); // 'approve' or 'cancel'
+  const [modalAction, setModalAction] = useState(null);
 
-  // Transforma a busca de dados em uma função reutilizável
   const fetchContracts = useCallback(async () => {
+    // ... (lógica de busca de dados permanece a mesma)
     if (user?.id) {
       try {
         setLoading(true);
@@ -50,7 +50,7 @@ function ContractPage() {
     fetchContracts();
   }, [fetchContracts]);
 
-  // --- Handlers para as ações do Cliente ---
+  // --- Handlers para as ações (permanecem os mesmos) ---
   const handleApproveClick = (contractId) => {
     setSelectedContractId(contractId);
     setModalAction("approve");
@@ -80,8 +80,9 @@ function ContractPage() {
       });
     }
   };
-
+  
   const handleConfirmAction = async () => {
+    // ... (lógica de confirmação permanece a mesma)
     if (!selectedContractId || !modalAction) return;
 
     try {
@@ -100,7 +101,7 @@ function ContractPage() {
           type: "success",
         });
       }
-      fetchContracts(); // Recarrega a lista para refletir as mudanças
+      fetchContracts();
     } catch (err) {
       const message =
         modalAction === "approve"
@@ -118,33 +119,71 @@ function ContractPage() {
   const LoadingState = () => (
     <div className="flex flex-col items-center justify-center pt-24 text-center">
       <Loader className="h-12 w-12 animate-spin text-blue-500" />
+      {/* O texto herda a cor do container principal */}
       <p className="mt-4 text-lg">Carregando...</p>
     </div>
   );
+
   const ErrorState = () => (
     <div className="flex flex-col items-center justify-center pt-24 text-center">
       <AlertCircle className="h-12 w-12 text-red-500" />
       <p className="mt-4 text-lg text-red-500">{error}</p>
     </div>
   );
+
   const EmptyState = () => (
-    <div className="text-center py-16 px-6 rounded-lg bg-white dark:bg-gray-800/50 border-dashed border-gray-300 dark:border-gray-700">
+    // AJUSTE: Classes dinâmicas para o container do estado vazio
+    <div
+      className={`
+        text-center py-16 px-6 rounded-lg border-dashed 
+        ${darkMode
+          ? "bg-gray-800/50 border-gray-700"
+          : "bg-white border-gray-300"
+        }
+      `}
+    >
       <FaFileContract className="mx-auto text-6xl text-gray-400 mb-4" />
       <h2 className="text-xl font-semibold">Nenhum contrato encontrado</h2>
-      <p className="text-gray-500 dark:text-gray-400">
+      {/* AJUSTE: Classe dinâmica para o parágrafo */}
+      <p className={darkMode ? "text-gray-400" : "text-gray-500"}>
         Suas propostas e contratos aparecerão aqui.
       </p>
     </div>
   );
 
   return (
-    <div className="w-full bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
-      <header className="bg-white dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700/50 shadow-sm">
+    // AJUSTE: Classes dinâmicas para o container principal da página
+    <div
+      className={`
+        w-full min-h-screen 
+        ${darkMode
+          ? "bg-gray-900 text-gray-200"
+          : "bg-gray-50 text-gray-800"
+        }
+      `}
+    >
+      {/* AJUSTE: Classes dinâmicas para o header */}
+      <header
+        className={`
+          shadow-sm border-b 
+          ${darkMode
+            ? "bg-gray-800/50 border-gray-700/50"
+            : "bg-white border-gray-200"
+          }
+        `}
+      >
         <div className="max-w-5xl mx-auto py-6 px-4 sm:px-6">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+          {/* AJUSTE: Classes dinâmicas para o título h1 */}
+          <h1
+            className={`
+              text-3xl font-bold tracking-tight 
+              ${darkMode ? "text-white" : "text-gray-900"}
+            `}
+          >
             Meus Contratos
           </h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">
+          {/* AJUSTE: Classes dinâmicas para o parágrafo */}
+          <p className={`mt-1 ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
             Gerencie os fretes que você publicou e as propostas recebidas.
           </p>
         </div>
@@ -160,11 +199,12 @@ function ContractPage() {
             {contracts.map((contract) => (
               <div
                 key={contract.id}
+                // Esta borda azul funciona bem em ambos os modos, não precisa de ajuste.
                 className="rounded-lg border-l-4 border-blue-500 overflow-hidden transition-all hover:-translate-y-1"
               >
                 <ContractCard
                   contract={contract}
-                  darkMode={darkMode}
+                  darkMode={darkMode} // Prop já estava sendo passada corretamente
                   userRole="CLIENT"
                   onApprove={handleApproveClick}
                   onCancel={handleCancelClick}

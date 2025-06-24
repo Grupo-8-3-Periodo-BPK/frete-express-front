@@ -100,13 +100,14 @@ export const updateUser = async (id, userData) => {
 
 export const deleteUser = async (id) => {
   try {
-    await api.delete(`/api/users/${id}`);
+    const response = await api.delete(`/api/users/${id}`);
+    return response;
   } catch (error) {
     console.error(
       `Erro ao deletar usuário com ID ${id}:`,
       error.response ? error.response.data : error.message
     );
-    return error.response ? error.response.data : error.response;
+    throw error;
   }
 };
 

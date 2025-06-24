@@ -22,6 +22,7 @@ import {
 } from "../../../services/route";
 import { getStateFullName } from "../../../utils/stateUtils";
 import { getDistanceFromLatLonInKm } from "../../../utils/mapUtils";
+import { useTheme } from "../../../contexts/AuthContext";
 
 // Funções utilitárias (sem alterações)
 const formatCurrency = (value) =>
@@ -35,7 +36,6 @@ const formatDate = (dateString) =>
 
 const ContractCard = ({
   contract,
-  darkMode,
   userRole,
   onApprove,
   onCancel,
@@ -49,8 +49,9 @@ const ContractCard = ({
   const [destination, setDestination] = useState(null);
   const [route, setRoute] = useState([]);
   const navigate = useNavigate();
+  const { darkMode } = useTheme();
 
-  // Objeto de configuração de status com cores ajustadas para melhor contraste no modo claro
+  // Objeto de configuração de status agora usa a prop darkMode
   const statusConfig = {
     PENDING_CLIENT_APPROVAL: {
       text:
@@ -58,31 +59,27 @@ const ContractCard = ({
           ? "Aguardando Sua Aprovação"
           : "Aguardando Resposta do Cliente",
       Icon: FaClock,
-      // AJUSTE: Aumentado o contraste do amarelo
       color: darkMode ? "text-yellow-400" : "text-yellow-500",
     },
     ACTIVE: {
       text: "Pronto para Iniciar",
       Icon: FaCheckCircle,
-      // AJUSTE: Aumentado o contraste do verde
       color: darkMode ? "text-green-400" : "text-green-600",
     },
     IN_PROGRESS: {
       text: "Em Andamento",
       Icon: FaTruck,
-      // AJUSTE: Aumentado o contraste do azul
       color: darkMode ? "text-blue-400" : "text-blue-500",
     },
     REJECTED: {
       text: "Rejeitado",
       Icon: FaTimesCircle,
-      // AJUSTE: Aumentado o contraste do vermelho
       color: darkMode ? "text-red-400" : "text-red-500",
     },
     CANCELLED_BY_DRIVER: {
       text: "Cancelado pelo Motorista",
       Icon: FaBan,
-      color: "text-red-500",
+      color: "text-red-500", // Vermelho-500 tem bom contraste em ambos os modos
     },
     CANCELLED_BY_CLIENT: {
       text: "Cancelado pelo Cliente",
@@ -92,102 +89,72 @@ const ContractCard = ({
     COMPLETED: {
       text: "Concluído",
       Icon: FaStar,
-      // AJUSTE: Mantido um azul consistente
       color: darkMode ? "text-blue-400" : "text-blue-500",
     },
     DEFAULT: {
       text: "Status Desconhecido",
       Icon: FaExclamationTriangle,
-      // AJUSTE: Aumentado o contraste do cinza
       color: darkMode ? "text-gray-400" : "text-gray-500",
     },
   };
 
-  useEffect(() => {
-    // Lógica de busca de localização (sem alterações)
-    const shouldTrack = ["ACTIVE", "IN_PROGRESS"].includes(contract.status);
+    // Lógica de busca de localização permanece inalterada
+    useEffect(() => {
+        const shouldTrack = ["ACTIVE", "IN_PROGRESS"].includes(contract.status);
+        if (shouldTrack && (userRole === "CLIENT" || userRole === "ADMIN")) {
+            const fetchLocationAndRoute = async () => {
+                try {
+                    const freight = await getFreightById(contract.freightId);
+                    if (!freight) return;
 
-    if (shouldTrack && (userRole === "CLIENT" || userRole === "ADMIN")) {
-      const fetchLocationAndRoute = async () => {
-        try {
-          const freight = await getFreightById(contract.freightId);
-          if (!freight) return;
+                    const originState = getStateFullName(freight.origin_state);
+                    const destinationState = getStateFullName(freight.destination_state);
+                    const originAddress = `${freight.origin_city}, ${originState}, Brasil`;
+                    const destinationAddress = `${freight.destination_city}, ${destinationState}, Brasil`;
 
-          const originState = getStateFullName(freight.origin_state);
-          const destinationState = getStateFullName(freight.destination_state);
-          const originAddress = `${freight.origin_city}, ${originState}, Brasil`;
-          const destinationAddress = `${freight.destination_city}, ${destinationState}, Brasil`;
+                    const [originCoordString, destinationCoordString] = await Promise.all([
+                        getCoordinatesForAddress(originAddress),
+                        getCoordinatesForAddress(destinationAddress),
+                    ]);
 
-          const [originCoordString, destinationCoordString] = await Promise.all(
-            [
-              getCoordinatesForAddress(originAddress),
-              getCoordinatesForAddress(destinationAddress),
-            ]
-          );
+                    const originCoords = originCoordString.split(",").map(Number).reverse();
+                    const destinationCoords = destinationCoordString.split(",").map(Number).reverse();
 
-          const originCoords = originCoordString
-            .split(",")
-            .map(Number)
-            .reverse();
-          const destinationCoords = destinationCoordString
-            .split(",")
-            .map(Number)
-            .reverse();
+                    setOrigin({ coords: originCoords });
+                    setDestination({ coords: destinationCoords });
 
-          setOrigin({ coords: originCoords });
-          setDestination({ coords: destinationCoords });
+                    if (route.length === 0) {
+                        const routeResponse = await getRouteDirections(originCoordString, destinationCoordString);
+                        if (routeResponse.data && routeResponse.data.coordinates) {
+                            setRoute(routeResponse.data.coordinates);
+                        }
+                    }
 
-          if (route.length === 0) {
-            const routeResponse = await getRouteDirections(
-              originCoordString,
-              destinationCoordString
-            );
-            if (routeResponse.data && routeResponse.data.coordinates) {
-              setRoute(routeResponse.data.coordinates);
-            }
-          }
+                    const trackingResponse = await getLatestTrackingForContract(contract.id);
+                    if (trackingResponse && trackingResponse.data) {
+                        const driverCoords = [
+                            trackingResponse.data.originLatitude,
+                            trackingResponse.data.originLongitude,
+                        ];
 
-          const trackingResponse = await getLatestTrackingForContract(
-            contract.id
-          );
-          if (trackingResponse && trackingResponse.data) {
-            const driverCoords = [
-              trackingResponse.data.originLatitude,
-              trackingResponse.data.originLongitude,
-            ];
+                        const routeDistance = getDistanceFromLatLonInKm(originCoords, destinationCoords);
+                        const driverDistance = getDistanceFromLatLonInKm(originCoords, driverCoords);
 
-            const routeDistance = getDistanceFromLatLonInKm(
-              originCoords,
-              destinationCoords
-            );
-            const driverDistance = getDistanceFromLatLonInKm(
-              originCoords,
-              driverCoords
-            );
-
-            if (driverDistance < routeDistance * 1.5 + 50) {
-              setCurrentLocation({ coords: driverCoords });
-            } else {
-              setCurrentLocation(null);
-              console.warn(
-                "Localização do motorista descartada por ser inconsistente com a rota."
-              );
-            }
-          }
-        } catch (error) {
-          console.error("Erro ao buscar a localização ou rota:", error);
+                        if (driverDistance < routeDistance * 1.5 + 50) {
+                            setCurrentLocation({ coords: driverCoords });
+                        } else {
+                            setCurrentLocation(null);
+                            console.warn("Localização do motorista descartada por ser inconsistente com a rota.");
+                        }
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar a localização ou rota:", error);
+                }
+            };
+            fetchLocationAndRoute();
         }
-      };
+    }, [contract.id, contract.freightId, contract.status, userRole, route.length]);
 
-      fetchLocationAndRoute();
-    }
-  }, [
-    contract.id,
-    contract.freightId,
-    contract.status,
-    userRole,
-    route.length,
-  ]);
 
   const statusInfo = statusConfig[contract.status] || statusConfig.DEFAULT;
 
@@ -196,8 +163,7 @@ const ContractCard = ({
   const handleCancel = () => onCancel && onCancel(contract.id);
   const handleComplete = () => onComplete && onComplete(contract.id);
   const handleDelete = () => onDelete && onDelete(contract.id);
-  const handleCancelByAdmin = () =>
-    onCancelByAdmin && onCancelByAdmin(contract.id);
+  const handleCancelByAdmin = () => onCancelByAdmin && onCancelByAdmin(contract.id);
   const handleStartTracking = () => {
     if (userRole === "DRIVER" && onStart) {
       onStart(contract.id);
@@ -218,7 +184,7 @@ const ContractCard = ({
       <div className="flex-grow">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h2 className="text-xl font-bold text-blue-500 dark:text-blue-400">
+            <h2 className={`text-xl font-bold ${darkMode ? "text-blue-400" : "text-blue-500"}`}>
               {contract.displayName}
             </h2>
             <div className="flex items-center mt-2">
@@ -229,8 +195,7 @@ const ContractCard = ({
             </div>
           </div>
           <div className="text-right">
-            {/* AJUSTE: Adicionada cor explícita para o modo claro */}
-            <p className="text-lg font-semibold text-gray-900 dark:text-white">
+            <p className={`text-lg font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
               {formatCurrency(contract.agreedValue)}
             </p>
           </div>
@@ -246,11 +211,8 @@ const ContractCard = ({
           {userRole === "ADMIN" ? (
             <>
               <div className="flex items-center">
-                {/* AJUSTE: Aumentado contraste do ícone */}
                 <FaUserCircle
-                  className={`mr-3 ${
-                    darkMode ? "text-gray-400" : "text-gray-700"
-                  }`}
+                  className={`mr-3 ${darkMode ? "text-gray-400" : "text-gray-700"}`}
                   size={20}
                 />
                 <div>
@@ -258,11 +220,8 @@ const ContractCard = ({
                 </div>
               </div>
               <div className="flex items-center">
-                {/* AJUSTE: Aumentado contraste do ícone */}
                 <FaUserCircle
-                  className={`mr-3 ${
-                    darkMode ? "text-gray-400" : "text-gray-700"
-                  }`}
+                  className={`mr-3 ${darkMode ? "text-gray-400" : "text-gray-700"}`}
                   size={20}
                 />
                 <div>
@@ -272,11 +231,8 @@ const ContractCard = ({
             </>
           ) : (
             <div className="flex items-center">
-              {/* AJUSTE: Aumentado contraste do ícone */}
               <FaUserCircle
-                className={`mr-3 ${
-                  darkMode ? "text-gray-400" : "text-gray-700"
-                }`}
+                className={`mr-3 ${darkMode ? "text-gray-400" : "text-gray-700"}`}
                 size={20}
               />
               <div>
@@ -290,7 +246,6 @@ const ContractCard = ({
             </div>
           )}
           <div className="flex items-center">
-            {/* AJUSTE: Aumentado contraste do ícone */}
             <FaCalendarAlt
               className={`mr-3 ${darkMode ? "text-gray-400" : "text-gray-700"}`}
               size={20}
@@ -300,7 +255,6 @@ const ContractCard = ({
             </div>
           </div>
           <div className="flex items-center">
-            {/* AJUSTE: Aumentado contraste do ícone */}
             <FaTruck
               className={`mr-3 ${darkMode ? "text-gray-400" : "text-gray-700"}`}
               size={20}
@@ -316,12 +270,10 @@ const ContractCard = ({
       {(userRole === "CLIENT" || userRole === "ADMIN") &&
         ["ACTIVE", "IN_PROGRESS"].includes(contract.status) && (
           <div className="mt-4">
-            {/* AJUSTE: Adicionada cor explícita para o modo claro */}
-            <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
-              Rastreamento em Tempo Real
+            <h3 className={`text-lg font-semibold mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}>
+              Rota do Frete
             </h3>
-            {/* AJUSTE: Adicionada borda explícita para o modo claro */}
-            <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div className={`rounded-lg overflow-hidden border ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
               {origin ? (
                 <Map
                   origin={origin}
@@ -330,8 +282,8 @@ const ContractCard = ({
                   route={route}
                 />
               ) : (
-                <div className="h-48 flex items-center justify-center bg-gray-100 dark:bg-gray-700">
-                  <p className="text-gray-500">
+                <div className={`h-48 flex items-center justify-center ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}>
+                  <p className={`${darkMode ? "text-gray-400" : "text-gray-500"}`}>
                     Carregando dados de rastreamento...
                   </p>
                 </div>
@@ -340,13 +292,15 @@ const ContractCard = ({
           </div>
         )}
 
-      {/* Seção de Ações Dinâmicas (sem alterações de estilo necessárias) */}
+      {/* Seção de Ações Dinâmicas */}
       <div
         className={`border-t ${
           darkMode ? "border-gray-700" : "border-gray-200"
         } mt-6 pt-4 flex flex-wrap justify-end gap-3`}
       >
-        {/* ... Lógica de botões permanece a mesma ... */}
+        {/* A lógica dos botões permanece a mesma, pois as classes de botões
+            (bg-green-500, etc.) geralmente têm bom contraste em ambos os temas.
+            Caso contrário, eles também poderiam ser ajustados. */}
         {userRole === "CLIENT" &&
           contract.status === "PENDING_CLIENT_APPROVAL" && (
             <button

@@ -1,10 +1,42 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "../../../contexts/AuthContext";
-import { AlertTriangle, X } from "lucide-react";
+import { AlertTriangle, X, Info, CheckCircle } from "lucide-react";
 
-const Confirmation = ({ isOpen, onClose, onConfirm, title, message }) => {
+const Confirmation = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmText,
+  type = "warning",
+}) => {
   const { darkMode } = useTheme();
+
+  const typeVariants = {
+    warning: {
+      Icon: AlertTriangle,
+      iconColor: "text-red-600",
+      bgColor: "bg-red-100",
+      buttonClasses: "bg-red-600 hover:bg-red-700 focus:ring-red-500",
+    },
+    info: {
+      Icon: Info,
+      iconColor: "text-blue-600",
+      bgColor: "bg-blue-100",
+      buttonClasses: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500",
+    },
+    success: {
+      Icon: CheckCircle,
+      iconColor: "text-green-600",
+      bgColor: "bg-green-100",
+      buttonClasses: "bg-green-600 hover:bg-green-700 focus:ring-green-500",
+    },
+  };
+
+  const selectedVariant = typeVariants[type] || typeVariants.warning;
+  const IconComponent = selectedVariant.Icon;
 
   return (
     <AnimatePresence>
@@ -31,8 +63,12 @@ const Confirmation = ({ isOpen, onClose, onConfirm, title, message }) => {
             <div className="p-6">
               <div className="flex items-start">
                 <div className="flex-shrink-0 mr-4">
-                  <div className="flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                    <AlertTriangle className="h-6 w-6 text-red-600" />
+                  <div
+                    className={`flex items-center justify-center h-12 w-12 rounded-full ${selectedVariant.bgColor}`}
+                  >
+                    <IconComponent
+                      className={`h-6 w-6 ${selectedVariant.iconColor}`}
+                    />
                   </div>
                 </div>
                 <div className="flex-1">
@@ -81,9 +117,9 @@ const Confirmation = ({ isOpen, onClose, onConfirm, title, message }) => {
               <button
                 type="button"
                 onClick={onConfirm}
-                className="px-4 py-2 bg-red-600 cursor-pointer hover:bg-red-700 text-white font-semibold rounded-lg transition-all duration-200 ease-in-out hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                className={`px-4 py-2 cursor-pointer text-white font-semibold rounded-lg transition-all duration-200 ease-in-out hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 ${selectedVariant.buttonClasses}`}
               >
-                Confirmar Exclusão
+                {confirmText || "Confirmar"}
               </button>
             </div>
           </motion.div>

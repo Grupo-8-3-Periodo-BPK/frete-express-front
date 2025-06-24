@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { registerClient } from "../../services/user";
 import Alert from "../../components/ui/modal/Alert";
 import Loading from "../../components/ui/modal/Loading";
+import { formatCpfCnpj, validateCpfCnpj } from "../../utils/formUtils";
 
 function RegisterClient() {
   const { darkMode } = useTheme();
@@ -26,9 +27,15 @@ function RegisterClient() {
   });
 
   const handleChange = (e) => {
+    let { name, value } = e.target;
+
+    if (name === "cpf_cnpj") {
+      value = formatCpfCnpj(value);
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
   };
 
@@ -39,15 +46,25 @@ function RegisterClient() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const cleanedCpfCnpj = formData.cpf_cnpj.replace(/[^\d]/g, "");
+    if (!validateCpfCnpj(cleanedCpfCnpj)) {
+      showAlert("CPF/CNPJ inválido.", "error");
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await registerClient(formData);
+      const dataToSubmit = {
+        ...formData,
+        cpf_cnpj: cleanedCpfCnpj,
+      };
+      const response = await registerClient(dataToSubmit);
       if (response.status === 201) {
         showAlert("Cliente cadastrado com sucesso", "success");
-        navigate("/login");
+        setNavigateTo("/login");
       } else {
         showAlert(response.data.error || "Erro ao cadastrar cliente", "error");
-        setLoading(false);
       }
     } catch (error) {
       showAlert("Erro ao cadastrar cliente", "error");

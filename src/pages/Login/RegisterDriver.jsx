@@ -6,6 +6,12 @@ import { motion } from "framer-motion";
 import { registerDriver } from "../../services/user";
 import Alert from "../../components/ui/modal/Alert";
 import Loading from "../../components/ui/modal/Loading";
+import {
+  formatCpfCnpj,
+  validateCpfCnpj,
+  formatCnh,
+  validateCnh,
+} from "../../utils/formUtils";
 
 function RegisterDriver() {
   const { darkMode } = useTheme();
@@ -27,7 +33,14 @@ function RegisterDriver() {
   });
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+
+    if (name === "cpf_cnpj") {
+      value = formatCpfCnpj(value);
+    } else if (name === "cnh") {
+      value = formatCnh(value);
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -36,15 +49,36 @@ function RegisterDriver() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const cleanedCpfCnpj = formData.cpf_cnpj.replace(/[^\d]/g, "");
+    if (!validateCpfCnpj(cleanedCpfCnpj)) {
+      showAlert("CPF/CNPJ inválido.", "error");
+      return;
+    }
+
+    const cleanedCnh = formData.cnh.replace(/[^\d]/g, "");
+    if (!validateCnh(cleanedCnh)) {
+      showAlert("CNH inválida. Deve conter 11 dígitos.", "error");
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await registerDriver(formData);
+      const dataToSubmit = {
+        ...formData,
+        cpf_cnpj: cleanedCpfCnpj,
+        cnh: cleanedCnh,
+      };
+
+      const response = await registerDriver(dataToSubmit);
       if (response.status === 201) {
         showAlert("Motorista cadastrado com sucesso", "success");
-        navigate("/login");
+        setNavigateTo("/login");
       } else {
-        showAlert(response.data.error || "Erro ao cadastrar motorista", "error");
-        setLoading(false);
+        showAlert(
+          response.data.error || "Erro ao cadastrar motorista",
+          "error"
+        );
       }
     } catch (error) {
       showAlert("Erro ao cadastrar motorista", "error");
